@@ -1,9 +1,13 @@
 import json
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from app.adapters import NebiusAdapter  # noqa: E402
+ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env")
+sys.path.insert(0, str(ROOT))
+
+from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated  # noqa: E402
 from app.intent import IntentError, validate_intent  # noqa: E402
 
 
@@ -24,8 +28,14 @@ def main() -> int:
         try:
             raw = ad.parse(c["text"])
             row["raw"] = raw
-        except Exception as e:  # noqa
+        except OutputTruncated as e:
+            row.update(status="truncated", error=f"{type(e).__name__}: {e}  (raise NEBIUS_MAX_TOKENS)")
+            rows.append(row); continue
+        except InferenceUnavailable as e:
             row.update(status="unavailable", error=f"{type(e).__name__}: {e}")
+            rows.append(row); continue
+        except Exception as e:  
+            row.update(status="error", error=f"{type(e).__name__}: {e}")
             rows.append(row); continue
         try:
             it = validate_intent(raw, c["text"])
@@ -40,7 +50,12 @@ def main() -> int:
     out.write_text(json.dumps(rows, indent=2, ensure_ascii=False))
     n = len(rows)
     valid = [r for r in rows if r["status"] == "schema_valid_and_verbatim"]
-    print(f"cases={n} unavailable={sum(r['status']=='unavailable' for r in rows)} rejected={sum(r['status']=='rejected' for r in rows)} valid={len(valid)}")
+    count = lambda st: sum(r["status"] == st for r in rows)
+    print(f"cases={n} unavailable={count('unavailable')} truncated={count('truncated')} error={count('error')} "
+          f"rejected={count('rejected')} valid={len(valid)}")
+    for r in rows:
+        if r["status"] in ("unavailable", "truncated", "error", "rejected"):
+            print(f"  {r['id']} [{r['status']}] {r.get('error', '')}")
     print(f"among valid: mention_match={sum(r['mention_match'] for r in valid)}/{len(valid)} "
           f"phrase_match={sum(r['phrase_match'] for r in valid)}/{len(valid)} mode_match={sum(r['mode_match'] for r in valid)}/{len(valid)}")
     print(f"per-case detail written to {out}. These are raw counts from a {n}-case smoke set, not an accuracy estimate.")
