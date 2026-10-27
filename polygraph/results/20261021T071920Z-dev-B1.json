@@ -1,0 +1,721 @@
+{
+ "meta": {
+  "system": "B1",
+  "name": "B1 rule-based parser + same pipeline",
+  "split": "dev",
+  "n": 20,
+  "kind": "cases",
+  "model": null,
+  "max_tokens": null,
+  "extra_body": null,
+  "frozen_hash12": "31a3a179b958",
+  "at": "2026-10-21T07:19:20.912738+00:00"
+ },
+ "rows": [
+  {
+   "id": "D01",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": true,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Emeka the balance for those chairs.",
+   "gold_first": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "sys_first": {
+    "outcome": "STAGE",
+    "reason": null
+   },
+   "committed": {
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "turns": 2
+  },
+  {
+   "id": "D02",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Chidi the balance.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_entity"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "CN",
+    "amount_kobo": 6000000,
+    "agreement_id": "AG3"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_entity"
+   },
+   "committed": {
+    "recipient": "CN",
+    "amount_kobo": 6000000,
+    "agreement_id": "AG3"
+   },
+   "turns": 3
+  },
+  {
+   "id": "D03",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Send the usual to Emeka.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_entity"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": null
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_entity"
+   },
+   "committed": {
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": null
+   },
+   "turns": 3
+  },
+  {
+   "id": "D04",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": true,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Amaka 50k",
+   "gold_first": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "AO",
+    "amount_kobo": 5000000,
+    "agreement_id": null
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "AO",
+    "amount_kobo": 5000000,
+    "agreement_id": null
+   },
+   "sys_first": {
+    "outcome": "STAGE",
+    "reason": null
+   },
+   "committed": {
+    "recipient": "AO",
+    "amount_kobo": 5000000,
+    "agreement_id": null
+   },
+   "turns": 2
+  },
+  {
+   "id": "D05",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": false,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Bassey 80k for the transport.",
+   "gold_first": {
+    "outcome": "REFUSE",
+    "reason": "recipient_not_approved"
+   },
+   "gold_final": {
+    "outcome": "REFUSE",
+    "reason": "recipient_not_approved"
+   },
+   "sys_first": {
+    "outcome": "REFUSE",
+    "reason": "recipient_not_approved"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D06",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": false,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Amaka 650k for the fabric.",
+   "gold_first": {
+    "outcome": "REFUSE",
+    "reason": "over_limit"
+   },
+   "gold_final": {
+    "outcome": "REFUSE",
+    "reason": "over_limit"
+   },
+   "sys_first": {
+    "outcome": "REFUSE",
+    "reason": "over_limit"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D07",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": false,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Refund Emeka John 30k.",
+   "gold_first": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_operation"
+   },
+   "gold_final": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_operation"
+   },
+   "sys_first": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_operation"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D08",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Ngozi 10k",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "no_entity"
+   },
+   "gold_final": {
+    "outcome": "ASK",
+    "reason": "no_entity"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "no_entity"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D09",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Amaka",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "missing_amount"
+   },
+   "gold_final": {
+    "outcome": "ASK",
+    "reason": "missing_amount"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "missing_amount"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D10",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Emeka the remaining 50k for the chairs.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "stated_amount_conflicts_ledger"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 7000000,
+    "agreement_id": "AG1b"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "stated_amount_conflicts_ledger"
+   },
+   "committed": {
+    "recipient": "EO",
+    "amount_kobo": 7000000,
+    "agreement_id": "AG1b"
+   },
+   "turns": 3
+  },
+  {
+   "id": "D11",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": true,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Chidi Nwosu the balance for the paint.",
+   "gold_first": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "CN",
+    "amount_kobo": 6000000,
+    "agreement_id": "AG3"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "CN",
+    "amount_kobo": 6000000,
+    "agreement_id": "AG3"
+   },
+   "sys_first": {
+    "outcome": "STAGE",
+    "reason": null
+   },
+   "committed": {
+    "recipient": "CN",
+    "amount_kobo": 6000000,
+    "agreement_id": "AG3"
+   },
+   "turns": 2
+  },
+  {
+   "id": "D12",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": false,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Chidi Nwosu the balance for the paint.",
+   "gold_first": {
+    "outcome": "WAIT",
+    "reason": "unreconciled_entry"
+   },
+   "gold_final": {
+    "outcome": "WAIT",
+    "reason": "unreconciled_entry"
+   },
+   "sys_first": {
+    "outcome": "WAIT",
+    "reason": "unreconciled_entry"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D13",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Chidi Eze 150k for the cement.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "exceeds_balance"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "CE",
+    "amount_kobo": 12000000,
+    "agreement_id": "AG2"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "exceeds_balance"
+   },
+   "committed": {
+    "recipient": "CE",
+    "amount_kobo": 12000000,
+    "agreement_id": "AG2"
+   },
+   "turns": 3
+  },
+  {
+   "id": "D14",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Emeka 10k for the cement.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "descriptor_mismatch"
+   },
+   "gold_final": {
+    "outcome": "ASK",
+    "reason": "descriptor_mismatch"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "descriptor_mismatch"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D15",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Pay Chidi Eze the balance for the cement.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_agreement"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "CE",
+    "amount_kobo": 12000000,
+    "agreement_id": "AG2"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "ambiguous_agreement"
+   },
+   "committed": {
+    "recipient": "CE",
+    "amount_kobo": 12000000,
+    "agreement_id": "AG2"
+   },
+   "turns": 3
+  },
+  {
+   "id": "D16",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Send the usual to Chidi Eze.",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "gold_final": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D17",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": true,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Abeg pay Emeka the remaining 50k for chairs",
+   "gold_first": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "sys_first": {
+    "outcome": "STAGE",
+    "reason": null
+   },
+   "committed": {
+    "recipient": "EO",
+    "amount_kobo": 5000000,
+    "agreement_id": "AG1"
+   },
+   "turns": 2
+  },
+  {
+   "id": "D18",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": true,
+   "gold_first_stage": false,
+   "clarification_outcome_only": true,
+   "appropriate_clarification": true,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Amaka the usual",
+   "gold_first": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "gold_final": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "sys_first": {
+    "outcome": "ASK",
+    "reason": "insufficient_history"
+   },
+   "committed": null,
+   "turns": 1
+  },
+  {
+   "id": "D19",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": true,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": true,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": 0,
+   "detail": null,
+   "text": "Oga pay Amaka 20k abeg",
+   "gold_first": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "AO",
+    "amount_kobo": 2000000,
+    "agreement_id": null
+   },
+   "gold_final": {
+    "outcome": "STAGE",
+    "reason": null,
+    "recipient": "AO",
+    "amount_kobo": 2000000,
+    "agreement_id": null
+   },
+   "sys_first": {
+    "outcome": "STAGE",
+    "reason": null
+   },
+   "committed": {
+    "recipient": "AO",
+    "amount_kobo": 2000000,
+    "agreement_id": null
+   },
+   "turns": 2
+  },
+  {
+   "id": "D20",
+   "mutation": null,
+   "ue": null,
+   "correct_commit": false,
+   "no_usable_output": false,
+   "gold_first_ask": false,
+   "gold_first_stage": false,
+   "clarification_outcome_only": false,
+   "appropriate_clarification": false,
+   "unnecessary_clarification": false,
+   "first_outcome_match": true,
+   "guessed_through_ambiguity": false,
+   "excess_turns": null,
+   "detail": null,
+   "text": "Pay Amaka $100",
+   "gold_first": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_currency"
+   },
+   "gold_final": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_currency"
+   },
+   "sys_first": {
+    "outcome": "REFUSE",
+    "reason": "unsupported_currency"
+   },
+   "committed": null,
+   "turns": 1
+  }
+ ]
+}

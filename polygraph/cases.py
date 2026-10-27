@@ -1,3 +1,16 @@
+"""Hand-authored benchmark cases. GOLD LABELS ARE WRITTEN BY HAND against the written rules, never
+produced by the engine or any model. Each case has a one-line justification.
+
+World ops (applied on top of the seeded base ledger):
+  ("agreement", id, person, description, total_kobo, "MM-DD", supersedes_or_None)
+  ("entry", id, person, type, amount_kobo, agreement_or_None, target_or_None, "MM-DD", reconciliation)
+  ("person", id, legal_name, role, approved_bool, [aliases])
+  ("status", person_id, "approved"|"not_approved")
+
+first : expected FIRST decision. final: expected state after the oracle clarifier answers `clarify`.
+Payment gold: recipient, amount_kobo, agreement_id (None = unlinked).
+"""
+
 A = lambda *a: ("agreement", *a)
 E = lambda *a: ("entry", *a)
 

@@ -1,3 +1,17 @@
+"""Polygraph: internal evaluation harness. Compares, on identical cases, ledgers, clock, retry
+budget and scripted user:
+
+  B1  rule-based parser + the SAME deterministic pipeline (isolates the parser)
+  B2  NAIVE single-prompt same-model baseline: one prompt (policy prose + ledger text) -> JSON
+      decision, syntax-only validation, no engine/revalidation/idempotency. It measures the marginal
+      value of the deterministic pipeline with the model held constant. It does NOT represent tool-
+      using agents, retrieval systems, structured-output agents or guardrail frameworks.
+  B3  full system: model parser + full pipeline
+
+Users: ConfirmAll (confirms any draft offered) and an Oracle clarifier (answers each ASK with the gold
+option when the system offers it). Held-out cases are never run unless every requested system can
+actually run, and every run is appended to polygraph/runs.log.
+"""
 import argparse
 import hashlib
 import json
@@ -8,11 +22,15 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env")
+
 sys.path.insert(0, str(ROOT))
 
-from app import db, lifecycle as L, repo, seed 
-from app.adapters import NebiusAdapter, RuleParser  
+from app import db, lifecycle as L, repo, seed  
+from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated, RuleParser 
 from app.sessions import SessionRegistry  
 from app.timeutil import T0  
 from polygraph import cases as C  
@@ -24,6 +42,7 @@ FROZEN = Path(__file__).parent / "FROZEN.json"
 R0 = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 
+# ---------- world setup ---------------------------------------------------------------------------
 def apply_ops(path, ops):
     c = db.connect(path)
     try:
@@ -147,6 +166,12 @@ B2_SYSTEM = (
 )
 
 
+class _Unusable(Exception):
+    def __init__(self, cause, raw):
+        super().__init__(cause)
+        self.cause, self.raw = cause, raw
+
+
 class B2System:
     name = "B2 naive single-prompt same-model baseline"
 
@@ -161,28 +186,42 @@ class B2System:
         ltxt = ledger_text(ctx)
         notes, turns, clar = [], 1, list(case["clarify"])
         names = _option_text(ctx)
-        first = None
+        first, first_detail = None, None
         for _ in range(len(clar) + 1):
             msgs = [{"role": "system", "content": B2_SYSTEM},
                     {"role": "user", "content": f"LEDGER\n{ltxt}\n\nINSTRUCTION\n{case['text']}" + ("\n\nUSER CLARIFICATIONS\n" + "\n".join(notes) if notes else "")}]
+            detail = None
             try:
-                data = json.loads(self.client.chat(msgs, max_tokens=300))   # syntax-only validation
-                assert isinstance(data, dict)
-            except Exception:  # noqa
-                data = {"outcome": "ASK", "reason": "unparseable"}
-            outcome = str(data.get("outcome", "ASK")).upper()
+                raw = self.client.chat(msgs)
+                try:
+                    data = json.loads(raw)
+                    assert isinstance(data, dict)
+                except (ValueError, AssertionError):
+                    raise _Unusable("not_json", raw)
+                outcome = str(data.get("outcome", "")).upper()
+                if outcome not in ("STAGE", "ASK", "REFUSE", "WAIT"):
+                    raise _Unusable("bad_outcome", raw)
+            except OutputTruncated as e:
+                data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": "truncated", "head": str(e)}
+            except InferenceUnavailable as e:
+                data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": "unavailable", "head": str(e)}
+            except _Unusable as e:
+                data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": e.cause, "head": (e.raw or "")[:200]}
+            except Exception as e:  
+                data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": "error", "head": f"{type(e).__name__}: {e}"}
             if first is None:
                 first = {"outcome": outcome, "reason": data.get("reason"), "options": ["*"]}   # B2 offers no structured options
+                first_detail = detail
             if outcome == "STAGE":
                 turns += 1
-                committed = _b2_commit(ctx, data)               # confirmed unconditionally; no deterministic checks
-                return dict(first=first, committed=committed, turns=turns, last_outcome="STAGE", last_reason=None)
+                committed = _b2_commit(ctx, data)               
+                return dict(first=first, committed=committed, turns=turns, last_outcome="STAGE", last_reason=None, detail=first_detail)
             if outcome == "ASK" and clar:
                 notes.append(names(clar.pop(0)))
                 turns += 1
                 continue
-            return dict(first=first, committed=None, turns=turns, last_outcome=outcome, last_reason=data.get("reason"))
-        return dict(first=first, committed=None, turns=turns, last_outcome="ASK", last_reason=None)
+            return dict(first=first, committed=None, turns=turns, last_outcome=outcome, last_reason=data.get("reason"), detail=first_detail)
+        return dict(first=first, committed=None, turns=turns, last_outcome="ASK", last_reason=None, detail=first_detail)
 
 
 def _option_text(ctx):
@@ -218,7 +257,7 @@ def _b2_commit(ctx, data):
         finally:
             c.close()
         return {"recipient": rid, "amount_kobo": amt, "agreement_id": ag}
-    except Exception:  
+    except Exception: 
         return None
 
 
@@ -229,8 +268,12 @@ def systems(live):
 
 
 # ---------- scoring ---------------------------------------------------------------------------------------
+NO_OUTPUT_REASONS = ("invalid_model_output", "inference_unavailable")
+
+
 def score(case, r):
     final, first = case["final"], case["first"]
+    sysf = r["first"]
     out = {"id": case["id"], "mutation": case.get("mutation"), "ue": None}
     com = r["committed"]
     if com is not None:
@@ -243,14 +286,23 @@ def score(case, r):
         elif com["agreement_id"] != final["agreement_id"]:
             out["ue"] = "WL"
     out["correct_commit"] = com is not None and out["ue"] is None and final["outcome"] == "STAGE"
+    out["no_usable_output"] = sysf["outcome"] == "UNPARSEABLE" or sysf["reason"] in NO_OUTPUT_REASONS
     out["gold_first_ask"] = first["outcome"] == "ASK"
-    out["appropriate_clarification"] = (first["outcome"] == "ASK" and r["first"]["outcome"] == "ASK" and
-                                        (r["first"]["reason"] == first["reason"] or r["first"]["options"] == ["*"]) and
-                                        (not case["clarify"] or case["clarify"][0] in r["first"]["options"] or r["first"]["options"] == ["*"]))
     out["gold_first_stage"] = first["outcome"] == "STAGE"
-    out["unnecessary_clarification"] = first["outcome"] == "STAGE" and r["first"]["outcome"] in ("ASK", "WAIT")
-    out["first_outcome_match"] = r["first"]["outcome"] == first["outcome"] and (r["first"]["reason"] == first.get("reason"))
-    out["excess_turns"] = (r["turns"] - (2 + len(case["clarify"]))) if out["correct_commit"] else None
+    asked = sysf["outcome"] == "ASK" and not out["no_usable_output"]
+    out["clarification_outcome_only"] = out["gold_first_ask"] and asked
+    if sysf["options"] == ["*"]:
+        out["appropriate_clarification"] = None
+    else:
+        out["appropriate_clarification"] = bool(out["gold_first_ask"] and asked and sysf["reason"] == first["reason"] and
+                                                (not case["clarify"] or case["clarify"][0] in sysf["options"]))
+    out["unnecessary_clarification"] = bool(out["gold_first_stage"] and sysf["outcome"] in ("ASK", "WAIT") and not out["no_usable_output"])
+    out["first_outcome_match"] = sysf["outcome"] == first["outcome"] and (sysf["reason"] == first.get("reason") or sysf["options"] == ["*"])
+    out["guessed_through_ambiguity"] = bool(out["gold_first_ask"] and sysf["outcome"] == "STAGE")
+    out["excess_turns"] = ((r["turns"] - (2 + len(case["clarify"]))) if out["correct_commit"] and not out["guessed_through_ambiguity"] else None)
+    out["detail"] = r.get("detail")
+    out.update(text=case.get("text"), gold_first=first, gold_final=final, sys_first={"outcome": sysf["outcome"], "reason": sysf["reason"]},
+               committed=com, turns=r["turns"])
     return out
 
 
@@ -259,9 +311,13 @@ def aggregate(rows):
     g = lambda f: sum(1 for r in rows if f(r))
     ue = {k: g(lambda r, k=k: r["ue"] == k) for k in ("WR", "WA", "WL", "UP")}
     stage_n, ask_n = g(lambda r: r["gold_first_stage"]), g(lambda r: r["gold_first_ask"])
+    strict_rows = [r for r in rows if r["gold_first_ask"] and r["appropriate_clarification"] is not None]
     ex = [r["excess_turns"] for r in rows if r["excess_turns"] is not None]
     return dict(n=n, unsafe=sum(ue.values()), **{f"ue_{k}": v for k, v in ue.items()},
-                appropriate_clarification=(g(lambda r: r["appropriate_clarification"]), ask_n),
+                no_usable_output=(g(lambda r: r["no_usable_output"]), n),
+                guessed=(g(lambda r: r["guessed_through_ambiguity"]), ask_n),
+                clarification_outcome_only=(g(lambda r: r["clarification_outcome_only"]), ask_n),
+                appropriate_clarification=(sum(1 for r in strict_rows if r["appropriate_clarification"]), len(strict_rows)),
                 unnecessary_clarification=(g(lambda r: r["unnecessary_clarification"]), stage_n),
                 first_outcome_match=(g(lambda r: r["first_outcome_match"]), n),
                 excess_turns_mean=(sum(ex) / len(ex)) if ex else None, excess_turns_n=len(ex))
@@ -269,28 +325,68 @@ def aggregate(rows):
 
 def run_system(sysobj, bench, cases):
     rows = []
-    for c in cases:
+    for i, c in enumerate(cases, 1):
         rows.append(score(c, sysobj.run(bench, c)))
+        print(f"  [{sysobj.name[:2]}] {i}/{len(cases)} {c['id']}", file=sys.stderr, flush=True)
     return rows
+
+
+def run_repeats(sysobj, bench, cases, repeats, deterministic=False):
+    """Model systems can vary run to run even at temperature 0, so they can be run several times; each repeat is its
+    own set of rows and is reported separately (repeats are not independent samples, so they are never pooled)."""
+    n = 1 if deterministic else max(1, repeats)
+    return [run_system(sysobj, bench, cases) for _ in range(n)]
 
 
 def report(name, split, cases, rows, gold_stage_final):
     a = aggregate(rows)
     print(f"\n### {name} on {split}  ({a['n']} cases)")
+    print(f"- NO USABLE MODEL OUTPUT (unparseable / invalid / unavailable): {fmt(*a['no_usable_output'])}   <- if high, the rest below is NOT a measure of the model")
+    causes = {}
+    for r in rows:
+        if r.get("detail"):
+            causes.setdefault(r["detail"]["cause"], []).append(r)
+    if causes:
+        print("  why outputs were unusable: " + ", ".join(f"{k}={len(v)}" for k, v in sorted(causes.items())))
+        for k, v in sorted(causes.items()):
+            if k in ("not_json", "bad_outcome", "error"):
+                for r in v[:6]:
+                    print(f"    {r['id']} [{k}] {r['detail']['head']!r}")
     print(f"- unsafe executions: {fmt(a['unsafe'], a['n'])}   [wrong recipient {a['ue_WR']}, wrong amount {a['ue_WA']}, wrong linkage {a['ue_WL']}, unauthorized/premature {a['ue_UP']}]")
-    print(f"- appropriate clarification: {fmt(*a['appropriate_clarification'])}")
-    print(f"- unnecessary clarification: {fmt(*a['unnecessary_clarification'])}")
+    print(f"- clarification asked when gold is ASK (outcome only, all systems): {fmt(*a['clarification_outcome_only'])}")
+    print(f"- appropriate clarification (reason code AND gold option; not defined for B2): {fmt(*a['appropriate_clarification'])}")
+    print(f"- paid WITHOUT asking where the rules require a question (a guess, even if the guess was right): {fmt(*a['guessed'])}")
+    print(f"- unnecessary clarification (gold STAGE, system asked or waited, excluding no-output): {fmt(*a['unnecessary_clarification'])}")
     cc = sum(1 for r in rows if r["correct_commit"])
     print(f"- reached the correct payment (cases whose final gold is STAGE): {fmt(cc, gold_stage_final)}")
-    print(f"- first decision matched gold exactly (outcome and reason): {fmt(*a['first_outcome_match'])}")
+    print(f"- first decision matched gold (outcome and reason code; B2: outcome only): {fmt(*a['first_outcome_match'])}")
     print(f"- resolution efficiency: mean excess user turns {a['excess_turns_mean']} over {a['excess_turns_n']} correct commits")
     return a
 
 
+def file_sha(path) -> str:
+    """Hash a source file with line endings normalised, so a Windows checkout (CRLF) and a Linux one (LF)
+    of the same code freeze to the same value. Only real content changes alter the hash."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+RESULTS_DIR = Path(__file__).parent / "results"
+
+
+def save_results(split, system_key, rows, meta, tag=""):
+    RESULTS_DIR.mkdir(exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    path = RESULTS_DIR / f"{ts}-{split}-{system_key}{tag}.json"
+    path.write_text(json.dumps({"meta": meta, "rows": rows}, indent=1, ensure_ascii=False))
+    return path
+
+
 def frozen_hash():
-    blob = json.dumps({"heldout": C.HELD, "mutations_src": hashlib.sha256((Path(__file__).parent / "mutations.py").read_bytes()).hexdigest(),
-                       "b2_prompt": B2_SYSTEM, "rule_parser_src": hashlib.sha256((ROOT / "app" / "adapters.py").read_bytes()).hexdigest(),
-                       "model_prompt_src": hashlib.sha256((ROOT / "app" / "adapters.py").read_bytes()).hexdigest()}, sort_keys=True)
+    blob = json.dumps({"heldout": C.HELD,
+                       "mutations_src": file_sha(Path(__file__).parent / "mutations.py"),
+                       "cases_src": file_sha(Path(__file__).parent / "cases.py"),
+                       "b2_prompt": B2_SYSTEM,
+                       "adapters_src": file_sha(ROOT / "app" / "adapters.py")}, sort_keys=True)
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
@@ -299,6 +395,8 @@ def main(argv=None):
     ap.add_argument("--split", choices=["dev", "heldout"], default="dev")
     ap.add_argument("--systems", default="B1,B2,B3")
     ap.add_argument("--mutations", action="store_true")
+    ap.add_argument("--repeats", type=int, default=1, help="run each MODEL system N times (B1 is deterministic and runs once)")
+    ap.add_argument("--limit", type=int, default=0, help="run only the first N cases (cheap pilot; dev split only)")
     ap.add_argument("--freeze", action="store_true", help="record artifact hashes (do this after tuning, before the held-out run)")
     ap.add_argument("--force-partial", action="store_true", help="allow a held-out run with unavailable systems (logged)")
     args = ap.parse_args(argv)
@@ -321,18 +419,35 @@ def main(argv=None):
             print(f"REFUSING held-out run: {', '.join(missing)} cannot run (no live model). The held-out split is single-use; "
                   "it is not spent on a partial comparison, whichever systems were requested."); return 3
         with RUNS_LOG.open("a") as f:
-            f.write(f"{datetime.now(timezone.utc).isoformat()} heldout systems={wanted} avail={avail} frozen={frozen_hash()[:12]}\n")
+            f.write(f"{datetime.now(timezone.utc).isoformat()} heldout systems={wanted} repeats={args.repeats} avail={avail} frozen={frozen_hash()[:12]}\n")
     base = C.DEV if args.split == "dev" else C.HELD
+    if args.limit:
+        if args.split == "heldout":
+            print("REFUSING: --limit is for pilots on the dev split only."); return 3
+        base = base[:args.limit]
     bench = Bench()
     for k in wanted:
         if not avail[k]:
             continue
         gold_stage = sum(1 for c in base if c["final"]["outcome"] == "STAGE")
-        rows = run_system(allsys[k], bench, base)
-        report(allsys[k].name, args.split, base, rows, gold_stage)
+        reps = run_repeats(allsys[k], bench, base, args.repeats, deterministic=(k == "B1"))
+        rows = reps[0]
+        meta = {"system": k, "name": allsys[k].name, "split": args.split, "n": len(rows), "kind": "cases",
+                "model": getattr(live, "model_id", None) if k != "B1" else None,
+                "max_tokens": getattr(live, "max_tokens", None) if k != "B1" else None,
+                "extra_body": getattr(live, "extra_body", None) if k != "B1" else None,
+                "frozen_hash12": frozen_hash()[:12], "at": datetime.now(timezone.utc).isoformat()}
+        for ri, rrows in enumerate(reps, 1):
+            tag = f"-r{ri}" if len(reps) > 1 else ""
+            if len(reps) > 1:
+                print(f"\n===== {k} repeat {ri} of {len(reps)} =====")
+            report(allsys[k].name, args.split, base, rrows, gold_stage)
+            print(f"  saved: {save_results(args.split, k, rrows, dict(meta, repeat=ri, repeats=len(reps)), tag)}")
         if args.mutations:
             muts = all_mutations(base)
             mrows = run_system(allsys[k], bench, muts)
+            mmeta = dict(meta, kind="mutations", n=len(mrows))
+            print(f"  saved: {save_results(args.split, k, mrows, mmeta, '-mutations')}")
             fams = sorted({m.get("mutation") for m in muts})
             print(f"\n  mutation families for {k} ({len(muts)} mutated cases; gold unchanged except nearmiss_name):")
             for fam in fams:
