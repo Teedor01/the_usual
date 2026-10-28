@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Usual</title>
+<style>
+  :root {
+    --paper: #f6f8fb; --sheet: #ffffff; --ink: #19202e; --muted: #5b6678; --rule: #c9d4e3;
+    --margin: #c4372c; --stage: #1c7a52; --ask: #a8660c; --wait: #54627a; --refuse: #c4372c;
+    --focus: #1747b8;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body { margin: 0; font: 16px/1.5 var(--sans); color: var(--ink);
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(160,180,210,.22) 31px, rgba(160,180,210,.22) 32px); }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  header { padding: 28px clamp(16px, 4vw, 48px) 8px; max-width: 1180px; margin: 0 auto; }
+  h1 { font: 700 clamp(30px, 4.4vw, 44px)/1.1 var(--serif); margin: 0 0 6px; letter-spacing: -.01em; }
+  .tagline { font: 400 clamp(17px, 2vw, 20px)/1.4 var(--serif); color: var(--ink); margin: 0 0 10px; max-width: 46ch; }
+  .sim { display: inline-block; font-size: 14px; color: var(--muted); }
+  .sim b { color: var(--ink); }
+  #banner { display: none; max-width: 1180px; margin: 12px auto 0; padding: 0 clamp(16px, 4vw, 48px); }
+  #banner .inner { border: 2px solid var(--margin); background: #fff4f2; padding: 14px 16px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+  #banner p { margin: 0; max-width: 70ch; }
+  main { max-width: 1180px; margin: 0 auto; padding: 16px clamp(16px, 4vw, 48px) 64px;
+    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+  @media (max-width: 880px) { main { grid-template-columns: 1fr; } }
+  form { display: flex; flex-direction: column; gap: 10px; }
+  label { font-weight: 600; }
+  textarea { font: 400 18px/1.4 var(--serif); padding: 12px 14px; border: 1.5px solid var(--ink); background: var(--sheet); min-height: 84px; resize: vertical; border-radius: 2px; width: 100%; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button { font: 600 16px var(--sans); padding: 10px 18px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; border-radius: 2px; min-height: 44px; }
+  button.secondary { background: var(--sheet); color: var(--ink); }
+  button.danger { background: var(--sheet); color: var(--refuse); border-color: var(--refuse); }
+  button[disabled] { opacity: .5; cursor: not-allowed; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font: 400 14px var(--sans); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); padding: 6px 10px; min-height: 36px; border-radius: 999px; }
+  .parser { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+  #decision { margin-top: 24px; }
+  .slip { position: relative; background: var(--sheet); border: 1px solid var(--rule); padding: 20px 22px 20px 34px; box-shadow: 0 1px 0 var(--rule); }
+  .slip::before { content: ""; position: absolute; left: 14px; top: 0; bottom: 0; width: 3px; background: var(--c, var(--wait)); }
+  .slip.stage { --c: var(--stage); } .slip.ask { --c: var(--ask); } .slip.refuse { --c: var(--refuse); } .slip.wait { --c: var(--wait); } .slip.done { --c: var(--stage); }
+  .tag { display: inline-block; font-weight: 700; font-size: 14px; color: var(--c); border: 1.5px solid var(--c); padding: 1px 8px; border-radius: 2px; margin-bottom: 8px; }
+  .slip h2 { font: 700 clamp(22px, 3vw, 28px)/1.2 var(--serif); margin: 0 0 6px; }
+  .slip p { margin: 0 0 12px; max-width: 62ch; }
+  .nothing { font-weight: 600; }
+  .figures { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-variant-numeric: tabular-nums; }
+  .figures th, .figures td { text-align: left; padding: 5px 0; border-bottom: 1px solid var(--rule); font-weight: 400; vertical-align: top; }
+  .figures td:last-child { text-align: right; white-space: nowrap; }
+  .figures tr.total td, .figures tr.total th { font-weight: 700; border-bottom: 2px solid var(--ink); }
+  .note { font-size: 14px; color: var(--muted); }
+  .warn { border: 1.5px solid var(--margin); background: #fff4f2; padding: 8px 12px; margin: 8px 0 12px; font-weight: 600; }
+  .opts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
+  .opts button { text-align: left; background: var(--sheet); color: var(--ink); font-weight: 500; }
+  .opts button:hover { background: #eef3fb; }
+  details { margin: 8px 0 12px; } summary { cursor: pointer; font-weight: 600; }
+  aside h2 { font: 700 22px/1.2 var(--serif); margin: 0 0 8px; }
+  .person { background: var(--sheet); border: 1px solid var(--rule); padding: 10px 14px; margin-bottom: 8px; }
+  .person .n { font-weight: 700; } .person .st { font-size: 13px; color: var(--muted); }
+  .person .st.no { color: var(--refuse); font-weight: 700; }
+  .person ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  table.entries { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; background: var(--sheet); border: 1px solid var(--rule); }
+  table.entries th, table.entries td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); }
+  table.entries td.amt { text-align: right; }
+  .clock { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+  .sr { position: absolute; left: -9999px; }
+  @media (prefers-reduced-motion: no-preference) { .slip { animation: land .18s ease-out; } @keyframes land { from { transform: translateY(4px); opacity: .6; } to { transform: none; opacity: 1; } } }
+</style>
+</head>
+<body>
+<header>
+  <h1>The Usual</h1>
+  <p class="tagline">Say it the way you always do. I turn it into a draft with the evidence behind it, and nothing is paid until you confirm.</p>
+  <span class="sim"><b>Simulated payments only.</b> No real money moves and no bank is connected.</span>
+</header>
+<div id="banner" role="alert"><div class="inner">
+  <p><b>Your previous session ended.</b> This is a new session with fresh sample data. Earlier drafts, ledger entries and history were not restored.</p>
+  <button class="secondary" id="banner-ok" type="button">Got it</button>
+</div></div>
+<main>
+  <section aria-labelledby="ask-h">
+    <form id="form">
+      <label id="ask-h" for="text">What should I do?</label>
+      <textarea id="text" name="text" maxlength="500" placeholder="Pay Emeka the balance for those chairs." required></textarea>
+      <div class="row"><button type="submit" id="go">Prepare it</button></div>
+      <div class="chips" id="chips" aria-label="Example instructions"></div>
+      <p class="parser" id="parser"></p>
+    </form>
+    <div id="decision" aria-live="polite"></div>
+  </section>
+  <aside aria-labelledby="ledger-h">
+    <h2 id="ledger-h">Your ledger</h2>
+    <p class="clock" id="clock"></p>
+    <div id="people"></div>
+    <h3 style="font:700 17px var(--serif);margin:16px 0 6px">Recent entries</h3>
+    <table class="entries" id="entries"><thead><tr><th>Date</th><th>Who</th><th>Type</th><th class="amt">Amount</th></tr></thead><tbody></tbody></table>
+  </aside>
+</main>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null) e.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return e;
+}
+const naira = (k) => { const neg = k < 0; k = Math.abs(k); const n = Math.floor(k / 100), r = k % 100;
+  return (neg ? "-" : "") + "₦" + n.toLocaleString("en-NG") + (r ? "." + String(r).padStart(2, "0") : ""); };
+const wat = (iso) => new Date(iso).toLocaleString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const EXAMPLES = ["Pay Emeka the balance for those chairs.", "Send the usual to Emeka.", "Pay Chidi the balance.", "Pay Amaka 50k", "Pay Bassey 80k"];
+
+let sid = sessionStorage.getItem("usual_sid"), draft = null, ledgerNow = null, ledgerAt = 0, liveModel = false, parserLabel = "", workTimer = null;
+
+async function newSession(showBanner) {
+  const r = await fetch("/api/sessions", { method: "POST" });
+  if (!r.ok) { $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("h2", {}, "Could not start a session"), h("p", {}, "The server is at capacity or unavailable. Try again in a minute."))); throw new Error("no session"); }
+  const j = await r.json();
+  sid = j.session_id; sessionStorage.setItem("usual_sid", sid);
+  if (showBanner) $("#banner").style.display = "block";
+  draft = null; $("#decision").replaceChildren();
+  return j;
+}
+async function api(path, method, body) {
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 150000);
+  let r, text;
+  try {
+    r = await fetch("/api/sessions/" + sid + path, { method: method || "GET", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined, signal: ctl.signal });
+    text = await r.text();
+  } catch (e) { if (e.name === "AbortError") { const t = new Error("timeout"); t.timeout = true; throw t; } throw e; }
+  finally { clearTimeout(timer); } let j; try { j = JSON.parse(text); } catch { j = { error: "bad_response" }; }
+  if (r.status === 410 && j.error === "session_gone") { await newSession(true); await refreshLedger(); const e = new Error("session_gone"); e.gone = true; throw e; }
+  return { status: r.status, body: j };
+}
+async function refreshLedger() {
+  const { body } = await api("/ledger");
+  ledgerNow = Date.parse(body.now); ledgerAt = Date.now();
+  $("#clock").textContent = "Demo clock: " + wat(body.now) + " (Lagos time). It starts at the same moment every session.";
+  $("#people").replaceChildren(...body.people.map((p) => h("div", { class: "person" },
+    h("div", { class: "n" }, p.name, " ", h("span", { class: "st" }, "(" + p.role + ")")),
+    h("div", { class: "st" + (p.payee_status === "approved" ? "" : " no") }, p.payee_status === "approved" ? "Approved payee" : "Not an approved payee: payments are refused"),
+    p.agreements.length ? h("ul", {}, p.agreements.map((a) => h("li", {}, a.description + ": " + naira(a.outstanding_kobo) + " outstanding of " + naira(a.total_kobo)))) : null)));
+  $("#entries tbody").replaceChildren(...body.entries.slice(0, 14).map((e) => h("tr", {},
+    h("td", {}, wat(e.occurred_at).split(",")[0]), h("td", {}, e.person), h("td", {}, e.type.replace("_", " ") + (e.reconciliation !== "reconciled" ? " (" + e.reconciliation + ")" : "")), h("td", { class: "amt" }, naira(e.amount_kobo)))));
+}
+
+function showWorking() {
+  const start = Date.now();
+  const note = h("p", { class: "note" });
+  const tick = () => { const sec = Math.floor((Date.now() - start) / 1000);
+    note.textContent = liveModel ? "Waiting for the language model: " + sec + "s. A reasoning model can take 10 to 40 seconds. Nothing is paid while I read." : "Reading your instruction."; };
+  tick(); clearInterval(workTimer); workTimer = setInterval(tick, 500);
+  $("#decision").replaceChildren(h("div", { class: "slip wait", "aria-busy": "true" }, h("span", { class: "tag" }, "Reading"), h("h2", {}, "Reading your instruction"), note));
+}
+function stopWorking() { clearInterval(workTimer); workTimer = null; }
+async function refreshBudget() {
+  const line = parserLabel;
+  if (!liveModel) { $("#parser").textContent = line; return; }
+  try { const { body } = await api("/budget"); $("#parser").textContent = line + " Model calls this session: " + body.session_used + " of " + body.session_cap + "."; } catch (e) { $("#parser").textContent = line; }
+}
+function headline(d) { return "Pay " + d.amount_display + " to " + d.recipient_name; }
+function figures(d) {
+  const c = d.computation, rows = [];
+  if (d.source === "outstanding_balance" && c.agreed_total_kobo != null) {
+    rows.push(h("tr", {}, h("th", {}, "Agreed: " + (d.agreement_description || "")), h("td", {}, naira(c.agreed_total_kobo))));
+    for (const p of c.payments) rows.push(h("tr", {}, h("th", {}, "Already paid (" + p.entry_id + ")" + (p.effective_kobo !== p.amount_kobo ? ", after reversals" : "")), h("td", {}, "-" + naira(p.effective_kobo))));
+    rows.push(h("tr", { class: "total" }, h("th", {}, "Outstanding"), h("td", {}, naira(c.outstanding_kobo))));
+  } else if (d.source === "recurring_pattern") {
+    for (const w of c.window) rows.push(h("tr", {}, h("th", {}, "Earlier payment (" + w.entry_id + ")"), h("td", {}, naira(w.effective_kobo))));
+    rows.push(h("tr", { class: "total" }, h("th", {}, "The usual, all identical"), h("td", {}, naira(c.pattern_kobo))));
+  } else {
+    rows.push(h("tr", { class: "total" }, h("th", {}, "Amount you stated"), h("td", {}, naira(d.stated_amount_kobo != null ? d.stated_amount_kobo : d.amount_kobo))));
+    if (c.outstanding_kobo_if_linked != null) rows.push(h("tr", {}, h("th", {}, "Outstanding on " + d.agreement_description), h("td", {}, naira(c.outstanding_kobo_if_linked))));
+  }
+  return h("table", { class: "figures" }, h("tbody", {}, rows));
+}
+function evidenceBox(d) {
+  const lines = [];
+  for (const e of d.evidence) if (e.table !== "instruction") lines.push(h("li", {}, e.id + ": " + e.summary));
+  const ex = d.excluded.map((e) => h("li", {}, e.entry_id + ": " + naira(e.amount_kobo) + " on " + wat(e.occurred_at).split(",")[0] + ", not linked to any agreement, so not counted." + (e.possibly_applicable ? " It may be related." : "")));
+  const nl = d.not_linked_balances.map((b) => h("li", {}, b.description + " still shows " + naira(b.outstanding_kobo) + " outstanding. This payment is not linked to it."));
+  if (!lines.length && !ex.length && !nl.length) return h("p", { class: "note" }, "This amount rests only on what you typed. No ledger record backs it, and no agreement was involved.");
+  return h("details", {}, h("summary", {}, "Evidence (" + lines.length + " " + (lines.length === 1 ? "record" : "records") + ")"), h("ul", {}, lines), ex.length ? h("p", { class: "note" }, "Not counted:") : null, ex.length ? h("ul", {}, ex) : null, nl.length ? h("ul", {}, nl) : null);
+}
+function render(v) {
+  const box = $("#decision");
+  if (v.status === "cancelled") { box.replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Cancelled"), h("p", {}, "Cancelled. Nothing was prepared or paid."))); return; }
+  const kind = (v.outcome || "wait").toLowerCase();
+  const labels = { stage: "Draft ready", ask: "One answer needed", refuse: "Refused", wait: "Waiting" };
+  const slip = h("div", { class: "slip " + kind });
+  slip.append(h("span", { class: "tag" }, labels[kind] || v.outcome));
+  if (v.outcome === "STAGE") {
+    draft = Object.assign({}, v.draft, { commitKey: crypto.randomUUID(), instruction_id: v.instruction_id });
+    const d = v.draft;
+    slip.append(h("h2", {}, headline(d)));
+    slip.append(h("p", { class: "nothing" }, "Nothing has been paid. This is a draft until you confirm."));
+    slip.append(figures(d));
+    if (d.override_over_kobo) slip.append(h("div", { class: "warn" }, "Override: this is " + naira(d.override_over_kobo) + " MORE than is owed on this agreement. It will be recorded as an overpayment."));
+    if (d.agreement_id == null && d.not_linked_balances.length === 0 && d.source === "explicit") slip.append(h("p", { class: "note" }, "This payment is not linked to an agreement."));
+    slip.append(evidenceBox(d));
+    slip.append(h("p", { class: "note", id: "ttl" }));
+    slip.append(h("div", { class: "row" },
+      h("button", { type: "button", id: "confirm", onclick: confirmDraft }, "Confirm payment"),
+      h("button", { type: "button", class: "secondary", onclick: cancelDraft }, "Cancel")));
+    tick();
+  } else {
+    draft = null;
+    slip.append(h("h2", {}, v.outcome === "ASK" ? "I need to check one thing" : v.outcome === "REFUSE" ? "I won't prepare this" : "I can't proceed yet"));
+    slip.append(h("p", {}, v.message));
+    if (v.stale_selection) slip.append(h("p", { class: "note" }, "Things changed since you chose, so I dropped that choice and asked again."));
+    if (v.outcome === "WAIT") slip.append(h("div", { class: "row" }, h("button", { type: "button", class: "secondary", onclick: () => retry(v.instruction_id) }, "Try again")));
+    if (v.options && v.options.length) slip.append(h("div", { class: "opts" }, v.options.map((o) => h("button", { type: "button", onclick: () => choose(v, o) }, o.label))));
+  }
+  box.replaceChildren(slip);
+  slip.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+function tick() {
+  const el = $("#ttl"); if (!el || !draft) return;
+  const left = Date.parse(draft.expires_at) - (ledgerNow + (Date.now() - ledgerAt));
+  el.textContent = left > 0 ? "This draft expires in " + Math.floor(left / 60000) + ":" + String(Math.floor(left / 1000) % 60).padStart(2, "0") + "." : "This draft has expired. Ask again.";
+  if (left > 0) setTimeout(tick, 1000);
+}
+async function submit(text) {
+  $("#go").disabled = true; $("#go").textContent = "Preparing…";
+  try {
+    showWorking();                 // replace the previous answer at once: never leave a stale result on screen
+    await refreshLedger();
+    const { status, body } = await api("/instructions", "POST", { text, idempotency_key: crypto.randomUUID() });
+    stopWorking();
+    if (status !== 200) return showError(body);
+    render(body);
+    refreshBudget();
+  } catch (e) { stopWorking(); if (!e.gone) (e.timeout ? showTimeout : showNetwork)(e); } finally { $("#go").disabled = false; $("#go").textContent = "Prepare it"; }
+}
+async function choose(v, o) {
+  try {
+    const { status, body } = await api("/instructions/" + v.instruction_id + "/resolve", "POST", { ask_decision_id: v.decision_id, option_id: o.id });
+    if (status !== 200) return showError(body);
+    render(body);
+  } catch (e) { if (!e.gone) showNetwork(e); }
+}
+async function retry(id) {
+  try { const { status, body } = await api("/instructions/" + id + "/retry", "POST"); status === 200 ? render(body) : showError(body); }
+  catch (e) { if (!e.gone) showNetwork(e); }
+}
+async function confirmDraft() {
+  const btn = $("#confirm"); btn.disabled = true;
+  try {
+    // The same commitKey is reused on every retry of THIS draft, so repeating is always safe.
+    const { status, body } = await api("/actions/" + draft.action_id + "/commit", "POST", { commit_key: draft.commitKey, confirmed_payload_hash: draft.payload_hash });
+    if (status === 200) {
+      $("#decision").replaceChildren(h("div", { class: "slip done" }, h("span", { class: "tag" }, "Recorded (simulated)"),
+        h("h2", {}, body.amount_display + " to " + body.recipient), h("p", {}, "Recorded as " + body.ledger_entry_id + (body.override_over_kobo ? ", including a " + naira(body.override_over_kobo) + " overpayment you approved." : ".") + " No real money moved.")));
+      draft = null; await refreshLedger(); return;
+    }
+    const msgs = { invalidated: "The ledger changed after this draft was prepared, so nothing was paid. Ask again to get a fresh draft.", expired: "This draft expired, so nothing was paid. Ask again.", cancelled: "This draft was cancelled.", already_committed: "This was already recorded." };
+    $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("span", { class: "tag" }, "Not paid"), h("h2", {}, "Nothing was paid"), h("p", {}, msgs[body.error] || body.message || "The payment was not recorded.")));
+    draft = null; await refreshLedger();
+  } catch (e) {
+    if (e.gone) return;
+    btn.disabled = false;
+    $("#ttl").textContent = "Connection lost. I can't tell whether this was recorded. Press Confirm again: it is safe to repeat, and it can only ever be recorded once.";
+  }
+}
+async function cancelDraft() {
+  const id = draft.action_id;
+  try { const { status, body } = await api("/actions/" + id + "/cancel", "POST"); status === 200 ? ($("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Cancelled"), h("p", {}, "Draft cancelled. Nothing was paid."))), draft = null) : showError(body); }
+  catch (e) { if (!e.gone) showNetwork(e); }
+}
+function showError(b) { $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("span", { class: "tag" }, "Error"), h("p", {}, b.message || b.error || "Something went wrong."))); }
+function showTimeout() { $("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Too slow"), h("p", {}, "That took too long, so I stopped waiting. Nothing was paid. Try again."))); }
+function showNetwork() { $("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Offline"), h("p", {}, "I couldn't reach the server. Nothing was paid. Check your connection and try again."))); }
+
+$("#form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#text").value.trim(); if (t) submit(t); });
+$("#banner-ok").addEventListener("click", () => { $("#banner").style.display = "none"; });
+$("#chips").replaceChildren(...EXAMPLES.map((t) => h("button", { type: "button", class: "chip", onclick: () => { $("#text").value = t; $("#text").focus(); } }, t)));
+(async () => {
+  try {
+    try { const i = await (await fetch("/api/info")).json(); liveModel = !!i.live_model; parserLabel = "Reading instructions with: " + i.parser + "."; $("#parser").textContent = parserLabel; } catch {}
+    if (!sid) await newSession(false);
+    else { const r = await fetch("/api/sessions/" + sid + "/ledger"); if (r.status === 410) await newSession(true); }
+    await refreshLedger();
+    await refreshBudget();
+  } catch (e) { if (!e.gone) console.error(e); }
+})();
+</script>
+</body>
+</html>
