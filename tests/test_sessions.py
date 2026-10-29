@@ -29,7 +29,7 @@ def test_SI2_template_is_immutable(env, template):
     s = env.new()
     v = s.say("Pay Amaka 50k", intent("Amaka", "explicit", "50k"))
     s.commit(v)
-    assert seed.file_hash(path) == h                                     
+    assert seed.file_hash(path) == h                                        
     ro = db.connect(path, readonly=True)
     with pytest.raises(sqlite3.OperationalError):
         ro.execute("INSERT INTO meta(key, value) VALUES ('x','y')")           
@@ -50,11 +50,11 @@ def test_SR1_missing_file_is_gone_forever_and_never_recreated(env):
         Path(str(gone_path) + ext).unlink(missing_ok=True)
     with pytest.raises(SessionGone):
         env.reg.resolve(a.sid)
-    b = env.new()                                                         
+    b = env.new()                                                           
     assert b.sid != a.sid
-    with pytest.raises(SessionGone):                                  
+    with pytest.raises(SessionGone):                                        
         env.reg.resolve(a.sid)
-    assert not gone_path.exists()                                      
+    assert not gone_path.exists()                                          
     assert env.reg.state_of(a.sid) == ("reset", "missing_file")
 
 
@@ -120,7 +120,7 @@ def test_SR_idle_expiry_is_permanent(env):
     env.time.advance(env.reg.idle_seconds + 1)
     with pytest.raises(SessionGone):
         env.reg.resolve(a.sid)
-    env.time.t = env.time.t.replace(year=2029)                              
+    env.time.t = env.time.t.replace(year=2029)                   
     with pytest.raises(SessionGone):
         env.reg.resolve(a.sid)
     assert env.reg.state_of(a.sid)[0] == "expired"
@@ -135,13 +135,13 @@ def test_SR_capacity_limit(env):
 
 
 def test_SR5_ui_never_implies_restoration():
-    html = Path("app/static/index.html").read_text()
+    html = Path("app/static/index.html").read_text(encoding="utf-8")
     assert "were not restored" in html and "fresh sample data" in html
     stripped = html.replace("were not restored", "")
     for word in ("restored", "resumed", "recovered", "welcome back", "pick up where", "continue where"):
         assert word not in stripped.lower(), word
     assert 'id="banner"' in html and 'role="alert"' in html and "banner-ok" in html
-    assert "sessionStorage" in html and "newSession(true)" in html           
+    assert "sessionStorage" in html and "newSession(true)" in html            # 410 always yields a NEW session plus the banner
 
 
 def test_SR6_commit_key_replayed_under_a_different_session(env):

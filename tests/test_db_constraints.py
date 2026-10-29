@@ -37,17 +37,17 @@ def adj(s, id, typ, amt, target, person="CN", ag="AG3", mmdd="10-07", recon="rec
 def test_L16_valid_reversals_and_reinstatements(w):
     s = w
     s.add_entry("R1", "CN", "reversal", 1_000_000, "AG3", "P", "10-07")          
-    s.add_entry("R2", "CN", "reversal", 1_500_000, "AG3", "P", "10-07")         
-    s.add_entry("I1", "CN", "reinstatement", 400_000, "AG3", "R1", "10-08")      
-    s.add_entry("I2", "CN", "reinstatement", 600_000, "AG3", "R1", "10-08")     
-    s.add_entry("R3", "CN", "reversal", 1_000_000, "AG3", "P", "10-09")          
+    s.add_entry("R2", "CN", "reversal", 1_500_000, "AG3", "P", "10-07")          
+    s.add_entry("I1", "CN", "reinstatement", 400_000, "AG3", "R1", "10-08")     
+    s.add_entry("I2", "CN", "reinstatement", 600_000, "AG3", "R1", "10-08")      
+    s.add_entry("R3", "CN", "reversal", 1_000_000, "AG3", "P", "10-09")       
     assert s.count(where="entry_type IN ('reversal','reinstatement')") == 5
 
 
 def test_L16_reconciliation_transitions_allowed(w):
     w.op("UPDATE ledger_entry SET reconciliation='reconciled' WHERE id='PP'")       
     w.add_entry("PP2", "CN", "payment_out", 100_000, None, mmdd="10-06", recon="pending")
-    w.op("UPDATE ledger_entry SET reconciliation='disputed' WHERE id='PP2'")        
+    w.op("UPDATE ledger_entry SET reconciliation='disputed' WHERE id='PP2'")      
     w.op("UPDATE ledger_entry SET reconciliation='reconciled' WHERE id='PP2'")      
     assert w.q("SELECT reconciliation r FROM ledger_entry WHERE id='PP2'")[0]["r"] == "reconciled"
 
@@ -61,10 +61,10 @@ def test_L16_over_reversal_by_one_kobo(w):
 
 
 @pytest.mark.parametrize("target,person,ag,match", [
-    ("E7", "EJ", None, "bad_target_type"),        
-    ("PI", "CN", None, "bad_target_type"),        
-    ("PP", "CN", None, "target_not_reconciled"),  
-    ("PD", "CN", None, "target_not_reconciled"), 
+    ("E7", "EJ", None, "bad_target_type"),       
+    ("PI", "CN", None, "bad_target_type"),       
+    ("PP", "CN", None, "target_not_reconciled"), 
+    ("PD", "CN", None, "target_not_reconciled"),  
 ])
 def test_L16_reversal_target_rules(w, target, person, ag, match):
     rejects(w, adj(w, "RX", "reversal", 1_000, target, person, ag), match)
@@ -77,7 +77,7 @@ def test_L16_reversal_of_a_reversal(w):
 
 def test_L16_cross_person_and_cross_agreement(w):
     rejects(w, adj(w, "RX", "reversal", 1_000, "P", person="EO", ag=None), "target_person_mismatch")
-    rejects(w, adj(w, "RX", "reversal", 1_000, "P", ag=None), "target_agreement_mismatch")       
+    rejects(w, adj(w, "RX", "reversal", 1_000, "P", ag=None), "target_agreement_mismatch")   
     w.add_entry("U1", "CN", "payment_out", 500_000, None, mmdd="10-06")
     rejects(w, adj(w, "RY", "reversal", 1_000, "U1", ag="AG3"), "target_agreement_mismatch")    
 
@@ -93,8 +93,8 @@ def test_L16_duplicate_evidence(w):
 
 
 def test_L16_shape_checks(w):
-    rejects(w, lambda: w.add_entry("RX", "CN", "reversal", 10, "AG3", None, "10-07"), "CHECK|target_missing")  
-    rejects(w, lambda: w.add_entry("PX", "CN", "payment_out", 10, "AG3", "P", "10-07"), "CHECK")      
+    rejects(w, lambda: w.add_entry("RX", "CN", "reversal", 10, "AG3", None, "10-07"), "CHECK|target_missing") 
+    rejects(w, lambda: w.add_entry("PX", "CN", "payment_out", 10, "AG3", "P", "10-07"), "CHECK")       
     rejects(w, lambda: w.add_entry("PY", "CN", "payment_out", 0, None, mmdd="10-07"), "CHECK")         
     rejects(w, lambda: w.add_entry("PZ", "CN", "payment_out", -5, None, mmdd="10-07"), "CHECK")
 
@@ -102,12 +102,12 @@ def test_L16_shape_checks(w):
 def test_L16_reinstatement_rules(w):
     w.add_entry("R1", "CN", "reversal", 1_000_000, "AG3", "P", "10-07")
     w.add_entry("RP", "CN", "reversal", 100, "AG3", "P2", "10-07", recon="pending")
-    rejects(w, adj(w, "IX", "reinstatement", 10, "P", mmdd="10-08"), "bad_target_type")            
-    rejects(w, adj(w, "IX", "reinstatement", 10, "RP", mmdd="10-08"), "target_not_reconciled")     
+    rejects(w, adj(w, "IX", "reinstatement", 10, "P", mmdd="10-08"), "bad_target_type")             
+    rejects(w, adj(w, "IX", "reinstatement", 10, "RP", mmdd="10-08"), "target_not_reconciled")      
     w.add_entry("I1", "CN", "reinstatement", 100_000, "AG3", "R1", "10-08")
     rejects(w, adj(w, "IX", "reinstatement", 10, "I1", mmdd="10-09"), "bad_target_type")         
     rejects(w, adj(w, "IY", "reinstatement", 900_001, "R1", mmdd="10-09"), "reinstatement_cap_exceeded")
-    w.add_entry("I2", "CN", "reinstatement", 900_000, "AG3", "R1", "10-09")                    
+    w.add_entry("I2", "CN", "reinstatement", 900_000, "AG3", "R1", "10-09")                 
     rejects(w, adj(w, "IZ", "reinstatement", 1, "R1", mmdd="10-09"), "reinstatement_cap_exceeded")
 
 
@@ -153,7 +153,7 @@ def test_L16_other_tables_protected(w):
 
 def test_agreement_supersession_rules(w):
     w.add_agreement("AGX", "CN", "paint 2", 100, "10-05", supersedes="AG3")
-    with pytest.raises(sqlite3.IntegrityError):                                    
+    with pytest.raises(sqlite3.IntegrityError):                                   
         w.add_agreement("AGY", "CN", "paint 3", 100, "10-06", supersedes="AG3")
     with pytest.raises(sqlite3.IntegrityError, match="supersede_person_mismatch"):
         w.add_agreement("AGZ", "EO", "x", 100, "10-06", supersedes="AGX")
@@ -167,10 +167,10 @@ def test_L22_reinstatement_restores_balances_and_reopens_capacity(s):
     s.add_entry("E9", "CN", "reversal", 2_500_000, "AG3", "E8", "10-07")
     t = "Pay Chidi Nwosu the balance for the paint."
     it = intent("Chidi Nwosu", "balance", desc=[("item", "paint")])
-    assert s.say(t, it)["draft"]["amount_kobo"] == 6_000_000                
+    assert s.say(t, it)["draft"]["amount_kobo"] == 6_000_000               
     s.add_entry("E12", "CN", "reinstatement", 2_500_000, "AG3", "E9", "10-08")
     v = s.say(t, it)
-    assert v["draft"]["amount_kobo"] == 3_500_000                            
+    assert v["draft"]["amount_kobo"] == 3_500_000                       
     s.add_entry("E13", "CN", "reversal", 2_500_000, "AG3", "E8", "10-09")
     with pytest.raises(sqlite3.IntegrityError, match="reversal_cap_exceeded"):
         s.add_entry("E14", "CN", "reversal", 1, "AG3", "E8", "10-09")
@@ -189,20 +189,20 @@ def test_L17_default_and_seed_approvals(s):
     assert {r["id"]: r["payee_status"] for r in s.q("SELECT id, payee_status FROM person")} == {
         "EO": "approved", "EJ": "approved", "CE": "approved", "CN": "approved", "AO": "approved", "BU": "not_approved"}
     s.op("INSERT INTO person(id, legal_name, role) VALUES ('NEW','New Person','supplier')")
-    assert s.q("SELECT payee_status p FROM person WHERE id='NEW'")[0]["p"] == "not_approved"  
+    assert s.q("SELECT payee_status p FROM person WHERE id='NEW'")[0]["p"] == "not_approved"   
     s.op("INSERT INTO person_alias(person_id, alias_normalized) VALUES ('NEW','amaka')")      
     v = s.say("Pay Amaka 10k", intent("Amaka", "explicit", "10k"))
-    assert v["outcome"] == "ASK" and v["reason"] == "ambiguous_entity"                        
+    assert v["outcome"] == "ASK" and v["reason"] == "ambiguous_entity"                       
     assert any("NOT APPROVED" in o["label"] for o in v["options"])
     v2 = s.pick(v, "select_person:NEW")
     assert (v2["outcome"], v2["reason"]) == ("REFUSE", "recipient_not_approved")
 
 
 def test_L17_no_application_route_writes_payee_status():
-    src = "".join(p.read_text() for p in Path("app").glob("*.py") if p.name not in ("schema.py", "seed.py"))
+    src = "".join(p.read_text(encoding="utf-8") for p in Path("app").glob("*.py") if p.name not in ("schema.py", "seed.py"))
     assert not re.search(r"UPDATE\s+person", src, re.I)
     assert not re.search(r"INSERT\s+(OR\s+\w+\s+)?INTO\s+person\b", src, re.I)
-    assert not re.search(r"payee_status\s*=(?!=)", src)        
+    assert not re.search(r"payee_status\s*=(?!=)", src)      
     from app.api import create_app  # noqa
     import tempfile
     from app.config import Settings
@@ -213,7 +213,7 @@ def test_L17_no_application_route_writes_payee_status():
 def test_L17_ledger_trigger_is_the_backstop(s):
     v = s.say("Pay Amaka 50k", intent("Amaka", "explicit", "50k"))
     aid = v["draft"]["action_id"]
-    s.op("UPDATE person SET payee_status='not_approved' WHERE id='AO'")                        
+    s.op("UPDATE person SET payee_status='not_approved' WHERE id='AO'")                     
     with pytest.raises(sqlite3.IntegrityError, match="payee_not_approved"):
         s.op("INSERT INTO ledger_entry(id, person_id, entry_type, amount_kobo, occurred_at, recorded_at, evidence_id,"
              " source_action_id) VALUES ('BAD','AO','payment_out',5000000,?,?,'ev_E1',?)", (D("10-12"), D("10-12"), aid))
@@ -247,7 +247,7 @@ def test_staged_state_machine_and_immutability(s):
     for sql, match in [("UPDATE staged_action SET amount_kobo=1, state='CANCELLED' WHERE id=?", "staged_immutable"),
                        ("UPDATE staged_action SET payload_hash='x', state='CANCELLED' WHERE id=?", "staged_immutable"),
                        ("UPDATE staged_action SET recipient_person_id='EO', state='COMMITTED' WHERE id=?", "staged_immutable"),
-                       ("UPDATE staged_action SET amount_kobo=1 WHERE id=?", "bad_transition"),  
+                       ("UPDATE staged_action SET amount_kobo=1 WHERE id=?", "bad_transition"), 
                        ("UPDATE staged_action SET state='STAGED' WHERE id=?", "bad_transition"),
                        ("DELETE FROM staged_action WHERE id=?", "staged_no_delete")]:
         with pytest.raises(sqlite3.IntegrityError, match=match):
@@ -291,17 +291,17 @@ def test_C4_begin_immediate_excludes_second_writer_immediately(s):
 
 def test_C4_deferred_read_then_write_fails_closed_after_competing_commit(s):
     a, b = db.connect(s.path, busy_timeout_ms=0), db.connect(s.path, busy_timeout_ms=0)
-    b.execute("BEGIN")                                             
-    b.execute("SELECT COUNT(*) FROM ledger_entry").fetchone()      
+    b.execute("BEGIN")                                         
+    b.execute("SELECT COUNT(*) FROM ledger_entry").fetchone()     
     a.execute("BEGIN IMMEDIATE")
     a.execute("UPDATE policy SET draft_ttl_seconds=901 WHERE id=1")
     a.execute("COMMIT")
-    with pytest.raises(sqlite3.OperationalError):               
+    with pytest.raises(sqlite3.OperationalError):                
         b.execute("UPDATE policy SET draft_ttl_seconds=902 WHERE id=1")
     b.execute("ROLLBACK")
     assert s.q("SELECT draft_ttl_seconds t FROM policy")[0]["t"] == 901
-    assert "BEGIN IMMEDIATE" in Path("app/db.py").read_text()
-    assert not re.search(r'execute\("BEGIN"\)', Path("app/lifecycle.py").read_text())
+    assert "BEGIN IMMEDIATE" in Path("app/db.py").read_text(encoding="utf-8")
+    assert not re.search(r'execute\("BEGIN"\)', Path("app/lifecycle.py").read_text(encoding="utf-8"))
 
 
 def test_C4_startup_audit_refuses_a_dropped_trigger(s):
@@ -312,4 +312,4 @@ def test_C4_startup_audit_refuses_a_dropped_trigger(s):
     with pytest.raises(db.SchemaAuditError):
         L.open_db(s.ctx)
     with pytest.raises(Exception):
-        s.env.reg.resolve(s.sid)                                   
+        s.env.reg.resolve(s.sid)                                

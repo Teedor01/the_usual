@@ -139,7 +139,7 @@ def test_heldout_is_gated(capsys, monkeypatch, tmp_path):
     assert "single-use" in capsys.readouterr().out and not (tmp_path / "runs.log").exists()   # a refusal does not spend the split
     assert R.main(["--split", "heldout", "--systems", "B1"]) == 3                       # asking for B1 alone must not spend it either
     assert "B2, B3 cannot run" in capsys.readouterr().out and not (tmp_path / "runs.log").exists()
-    (tmp_path / "FROZEN.json").write_text(json.dumps({"hash": "tampered"}))
+    (tmp_path / "FROZEN.json").write_text(json.dumps({"hash": "tampered"}), encoding="utf-8")
     assert R.main(["--split", "heldout", "--systems", "B1"]) == 3                       # artifacts changed since freezing
 
 
@@ -278,8 +278,8 @@ def test_compare_refuses_mismatched_runs(tmp_path, capsys):
     p1 = R.save_results("dev", "B1", [row("a")], {"system": "B1", "name": "x", "split": "dev", "kind": "cases"}) if False else None
     import json as _j
     f1, f2 = tmp_path / "1.json", tmp_path / "2.json"
-    f1.write_text(_j.dumps({"meta": {"system": "B1", "name": "x", "split": "dev", "kind": "cases"}, "rows": [row("a")]}))
-    f2.write_text(_j.dumps({"meta": {"system": "B3", "name": "y", "split": "heldout", "kind": "cases"}, "rows": [row("a")]}))
+    f1.write_text(_j.dumps({"meta": {"system": "B1", "name": "x", "split": "dev", "kind": "cases"}, "rows": [row("a")]}), encoding="utf-8")
+    f2.write_text(_j.dumps({"meta": {"system": "B3", "name": "y", "split": "heldout", "kind": "cases"}, "rows": [row("a")]}), encoding="utf-8")
     assert CMP.main([str(f1), str(f2)]) == 3
 
 
@@ -288,7 +288,7 @@ def test_compare_resolves_system_names_to_the_newest_saved_run(tmp_path, monkeyp
     monkeypatch.setattr(CMP, "RESULTS", tmp_path)
     meta = lambda sysk, kind: {"system": sysk, "name": sysk, "split": "dev", "kind": kind}
     def put(name, sysk, kind, ids):
-        (tmp_path / name).write_text(_j.dumps({"meta": meta(sysk, kind), "rows": [row(i) for i in ids]}))
+        (tmp_path / name).write_text(_j.dumps({"meta": meta(sysk, kind), "rows": [row(i) for i in ids]}), encoding="utf-8")
     put("20261021T010000Z-dev-B3.json", "B3", "cases", ["old"])
     put("20261021T020000Z-dev-B3.json", "B3", "cases", ["new"])
     put("20261021T030000Z-dev-B3-mutations.json", "B3", "mutations", ["m"])
@@ -310,8 +310,8 @@ def test_compare_show_prints_raw_decisions(tmp_path, capsys):
     ra = row("D04", text="Pay Amaka 50k", sys_first={"outcome": "STAGE", "reason": None}, committed={"recipient": "AO", "amount_kobo": 1, "agreement_id": None}, turns=2, detail=None)
     rb = row("D04", text="Pay Amaka 50k", sys_first={"outcome": "STAGE", "reason": None}, committed=None, turns=2, correct_commit=False,
              detail={"cause": "bad_outcome", "head": "{}"})
-    f1.write_text(_j.dumps({"meta": {"system": "B3", "name": "x", "split": "dev", "kind": "cases"}, "rows": [ra]}))
-    f2.write_text(_j.dumps({"meta": {"system": "B2", "name": "y", "split": "dev", "kind": "cases"}, "rows": [rb]}))
+    f1.write_text(_j.dumps({"meta": {"system": "B3", "name": "x", "split": "dev", "kind": "cases"}, "rows": [ra]}), encoding="utf-8")
+    f2.write_text(_j.dumps({"meta": {"system": "B2", "name": "y", "split": "dev", "kind": "cases"}, "rows": [rb]}), encoding="utf-8")
     assert CMP.main([str(f1), str(f2), "--show", "D04,NOPE"]) == 0
     out = capsys.readouterr().out
     assert "'Pay Amaka 50k'" in out and "B2: first=" in out and "committed=None" in out and "bad_outcome" in out and "NOPE" in out

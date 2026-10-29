@@ -58,9 +58,9 @@ def test_list_models():
 def test_from_env(monkeypatch):
     for k in ("NEBIUS_API_KEY", "NEBIUS_BASE_URL", "NEBIUS_MODEL"):
         monkeypatch.delenv(k, raising=False)
-    assert NebiusAdapter.from_env() is None                                      
+    assert NebiusAdapter.from_env() is None                                    
     monkeypatch.setenv("NEBIUS_API_KEY", "k"); monkeypatch.setenv("NEBIUS_BASE_URL", "https://x.invalid/v1/")
-    assert NebiusAdapter.from_env() is None                                      
+    assert NebiusAdapter.from_env() is None                                   
     monkeypatch.setenv("NEBIUS_MODEL", "m")
     a = NebiusAdapter.from_env()
     assert a.model_id == "m" and a.base_url == "https://x.invalid/v1"
@@ -69,14 +69,14 @@ def test_from_env(monkeypatch):
 def test_adapter_through_the_parse_pipeline(s):
     good = make(lambda r: chat("```json\n" + json.dumps(intent("Amaka", "explicit", "50k")) + "\n```"))
     assert L.run_parse(good, "Pay Amaka 50k")["status"] == "ok"
-    invented = make(lambda r: chat(json.dumps(intent("Amaka", "explicit", "75k"))))        
+    invented = make(lambda r: chat(json.dumps(intent("Amaka", "explicit", "75k"))))       
     p = L.run_parse(invented, "Pay Amaka 50k")
     assert p["status"] == "invalid" and p["calls"] == 2 and "not_verbatim" in p["error"]
     assert L.run_parse(make(lambda r: httpx.Response(503)), "Pay Amaka 50k")["status"] == "unavailable"
     v = s.say("Pay Amaka 50k", adapter=make(lambda r: httpx.Response(503)))
     assert (v["outcome"], v["reason"]) == ("WAIT", "inference_unavailable")
     v2 = s.say("Pay Bassey 80k", adapter=make(lambda r: chat(json.dumps({**intent("Bassey", "explicit", "80k"), "amount_kobo": 8000000}))))
-    assert v2["reason"] == "invalid_model_output"                                        
+    assert v2["reason"] == "invalid_model_output"                                          
 
 
 # ---- regressions for failures observed against the real endpoint ----------------------------------------
@@ -99,7 +99,7 @@ def test_truncation_is_invalid_output_not_an_outage(s):
     p = L.run_parse(a, "Pay Amaka 50k")
     assert p["status"] == "invalid" and p["error"].startswith("truncated") and p["calls"] == 2
     v = s.say("Pay Amaka 50k", adapter=a)
-    assert (v["outcome"], v["reason"]) == ("ASK", "invalid_model_output")       
+    assert (v["outcome"], v["reason"]) == ("ASK", "invalid_model_output")  
     assert s.count("staged_action") == 0
 
 
@@ -131,11 +131,11 @@ def test_prompt_examples_do_not_leak_benchmark_or_smoke_texts():
     from polygraph import cases as C
     examples = [l.split("Instruction: ", 1)[1] for l in SYSTEM_PROMPT.splitlines() if l.startswith("Instruction: ")]
     assert len(examples) == 3
-    smoke = [c["text"] for c in json.loads(Path("scripts/smoke_cases.json").read_text())]
+    smoke = [c["text"] for c in json.loads(Path("scripts/smoke_cases.json").read_text(encoding="utf-8"))]
     pool = {c["text"].lower() for c in C.ALL} | {t.lower() for t in smoke}
     assert not {e.lower() for e in examples} & pool
     names = {"tunde", "kemi", "roofing"}
-    assert not any(n in t for t in pool for n in names)                      
+    assert not any(n in t for t in pool for n in names)                   
 
 
 def test_token_budget_timeout_and_extra_body(monkeypatch):
@@ -150,7 +150,7 @@ def test_token_budget_timeout_and_extra_body(monkeypatch):
                       transport=httpx.MockTransport(h))
     b.parse("hello")
     assert seen["max_tokens"] == 777 and seen["foo"] == 1 and seen["x"] == {"y": 2}
-    assert seen["model"] == "m" and seen["messages"][-1]["content"] == "hello"      
+    assert seen["model"] == "m" and seen["messages"][-1]["content"] == "hello"     
     for k, v in (("NEBIUS_API_KEY", "k"), ("NEBIUS_BASE_URL", "https://x.invalid/v1"), ("NEBIUS_MODEL", "m"),
                  ("NEBIUS_MAX_TOKENS", "6000"), ("NEBIUS_TIMEOUT", "30"), ("NEBIUS_EXTRA_BODY", '{"foo": 2}')):
         monkeypatch.setenv(k, v)
