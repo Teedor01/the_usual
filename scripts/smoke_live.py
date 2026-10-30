@@ -1,22 +1,25 @@
 import json
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT / ".env")
-sys.path.insert(0, str(ROOT))
-
-from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated  # noqa: E402
-from app.intent import IntentError, validate_intent  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated  
+from app.console import utf8_streams  
+from app.envfile import load_dotenv, report 
+from app.intent import IntentError, validate_intent  
 
 
 def main() -> int:
+    utf8_streams()
+    report(load_dotenv())
     ad = NebiusAdapter.from_env()
     if ad is None:
-        print("NOT RUN: NEBIUS_API_KEY, NEBIUS_BASE_URL and NEBIUS_MODEL are not all set. No model was called.")
+        import os
+        missing = [k for k in ("NEBIUS_API_KEY", "NEBIUS_BASE_URL", "NEBIUS_MODEL") if not os.environ.get(k)]
+        print(f"NOT RUN: missing {', '.join(missing)}. Set them in a .env file next to the app folder (see .env.example) "
+              "or in this terminal window. No model was called.")
         return 2
-    cases = json.loads((Path(__file__).parent / "smoke_cases.json").read_text())
+    cases = json.loads((Path(__file__).parent / "smoke_cases.json").read_text(encoding="utf-8"))
     try:
         models = ad.list_models()
         print(f"models endpoint reachable; {len(models)} models listed; configured model present: {ad.model_id in models}")
@@ -34,7 +37,7 @@ def main() -> int:
         except InferenceUnavailable as e:
             row.update(status="unavailable", error=f"{type(e).__name__}: {e}")
             rows.append(row); continue
-        except Exception as e:  
+        except Exception as e: 
             row.update(status="error", error=f"{type(e).__name__}: {e}")
             rows.append(row); continue
         try:
@@ -47,7 +50,7 @@ def main() -> int:
         except IntentError as e:
             row.update(status="rejected", error=str(e))
         rows.append(row)
-    out.write_text(json.dumps(rows, indent=2, ensure_ascii=False))
+    out.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
     n = len(rows)
     valid = [r for r in rows if r["status"] == "schema_valid_and_verbatim"]
     count = lambda st: sum(r["status"] == st for r in rows)

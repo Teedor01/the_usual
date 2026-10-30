@@ -6,7 +6,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# (name, file, old, new, test files that should catch it)
 MUTATIONS = [
     ("ignore reversals in effective amounts", "app/domain.py",
      'return {e.id: e.amount_kobo - rev[e.id] + reinst[e.id] for e', 'return {e.id: e.amount_kobo for e', ["tests/test_scenarios.py"]),
@@ -39,10 +38,10 @@ def run(name, rel, old, new, tests):
     dst = tmp / "p"
     shutil.copytree(ROOT, dst, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", "data", "*.db"))
     f = dst / rel
-    src = f.read_text()
+    src = f.read_text(encoding="utf-8")
     if old not in src:
         return name, "BAD MUTATION (pattern not found)"
-    f.write_text(src.replace(old, new, 1))
+    f.write_text(src.replace(old, new, 1), encoding="utf-8")
     r = subprocess.run([sys.executable, "-m", "pytest", *tests, "-x", "-q", "-W", "ignore", "-p", "no:cacheprovider"],
                        cwd=dst, capture_output=True, text=True, timeout=600)
     shutil.rmtree(tmp, ignore_errors=True)

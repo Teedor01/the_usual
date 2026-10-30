@@ -1,3 +1,5 @@
+#!/bin/sh
+# Starts the real server, drives one full instruction -> commit cycle over HTTP with curl, stops it.
 set -u
 PORT=${PORT:-8077}; B=http://127.0.0.1:$PORT; DATA=$(mktemp -d)
 USUAL_DATA_DIR=$DATA python3 -m uvicorn app.api:create_app --factory --port $PORT --log-level warning > "$DATA/server.log" 2>&1 &
