@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import db, lifecycle as L, repo, seed
-from .adapters import NebiusAdapter, RuleParser
+from .adapters import MissingCredentials, NebiusAdapter, RuleParser, live_model_required, require_live_model_or_raise
 from .budget import BudgetedAdapter
 from .config import Settings
 from .envfile import load_dotenv, report as report_dotenv
@@ -52,6 +52,8 @@ def default_adapter(ctx: L.SessionContext):
     live = NebiusAdapter.from_env()
     if live is not None:
         return live
+    if live_model_required():  
+        raise MissingCredentials("USUAL_REQUIRE_LIVE_MODEL is set but the Nebius credentials are not usable.")
     conn = db.connect(ctx.path)
     try:
         names = [n for p in repo.load_persons(conn) for n in (p.legal_name, *p.aliases)]
@@ -62,9 +64,10 @@ def default_adapter(ctx: L.SessionContext):
 
 
 def create_app(settings: Optional[Settings] = None) -> FastAPI:
-    if settings is None:                       # real entry point (uvicorn --factory): read .env. Tests always pass Settings.
+    if settings is None:           
         report_dotenv(load_dotenv())
         settings = Settings.from_env()
+    require_live_model_or_raise()           
     tpl = ensure_template(settings.data_dir)
     registry = SessionRegistry(settings.data_dir / "registry.db", settings.data_dir / "sessions", tpl,
                                settings.time_source, settings.max_sessions, settings.idle_seconds)
@@ -126,6 +129,10 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     @app.get("/api/sessions/{session_id}/ledger")
     def ledger(session_id: str):
         return guarded(lambda ctx: L.ledger_view(ctx))(session_id)
+
+    @app.get("/api/sessions/{session_id}/activity")
+    def activity(session_id: str):
+        return guarded(lambda ctx: L.activity_view(ctx))(session_id)
 
     @app.post("/api/sessions/{session_id}/instructions")
     def post_instruction(session_id: str, body: InstructionIn):

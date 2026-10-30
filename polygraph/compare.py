@@ -25,7 +25,7 @@ def resolve(arg, split, kind):
 
 
 def load(path):
-    j = json.loads(Path(path).read_text())
+    j = json.loads(Path(path).read_text(encoding="utf-8"))
     return j["meta"], {r["id"]: r for r in j["rows"]}
 
 
@@ -111,4 +111,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from app.console import utf8_streams
+    utf8_streams()
     sys.exit(main())

@@ -1,17 +1,3 @@
-"""Polygraph: internal evaluation harness. Compares, on identical cases, ledgers, clock, retry
-budget and scripted user:
-
-  B1  rule-based parser + the SAME deterministic pipeline (isolates the parser)
-  B2  NAIVE single-prompt same-model baseline: one prompt (policy prose + ledger text) -> JSON
-      decision, syntax-only validation, no engine/revalidation/idempotency. It measures the marginal
-      value of the deterministic pipeline with the model held constant. It does NOT represent tool-
-      using agents, retrieval systems, structured-output agents or guardrail frameworks.
-  B3  full system: model parser + full pipeline
-
-Users: ConfirmAll (confirms any draft offered) and an Oracle clarifier (answers each ASK with the gold
-option when the system offers it). Held-out cases are never run unless every requested system can
-actually run, and every run is appended to polygraph/runs.log.
-"""
 import argparse
 import hashlib
 import json
@@ -22,18 +8,16 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(ROOT / ".env")
-
 sys.path.insert(0, str(ROOT))
 
 from app import db, lifecycle as L, repo, seed  
-from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated, RuleParser 
+from app.adapters import InferenceUnavailable, NebiusAdapter, OutputTruncated, RuleParser  
+from app.console import utf8_streams 
+from app.envfile import load_dotenv, report as report_dotenv  
 from app.sessions import SessionRegistry  
 from app.timeutil import T0  
-from polygraph import cases as C  
+from polygraph import cases as C 
 from polygraph.mutations import all_mutations  
 from polygraph.stats import fmt  
 
@@ -207,14 +191,14 @@ class B2System:
                 data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": "unavailable", "head": str(e)}
             except _Unusable as e:
                 data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": e.cause, "head": (e.raw or "")[:200]}
-            except Exception as e:  
+            except Exception as e:  # noqa: anything else is reported, never hidden
                 data, outcome, detail = {"reason": "unparseable"}, "UNPARSEABLE", {"cause": "error", "head": f"{type(e).__name__}: {e}"}
             if first is None:
                 first = {"outcome": outcome, "reason": data.get("reason"), "options": ["*"]}   # B2 offers no structured options
                 first_detail = detail
             if outcome == "STAGE":
                 turns += 1
-                committed = _b2_commit(ctx, data)               
+                committed = _b2_commit(ctx, data)               # confirmed unconditionally; no deterministic checks
                 return dict(first=first, committed=committed, turns=turns, last_outcome="STAGE", last_reason=None, detail=first_detail)
             if outcome == "ASK" and clar:
                 notes.append(names(clar.pop(0)))
@@ -257,7 +241,7 @@ def _b2_commit(ctx, data):
         finally:
             c.close()
         return {"recipient": rid, "amount_kobo": amt, "agreement_id": ag}
-    except Exception: 
+    except Exception:  
         return None
 
 
@@ -298,6 +282,7 @@ def score(case, r):
                                                 (not case["clarify"] or case["clarify"][0] in sysf["options"]))
     out["unnecessary_clarification"] = bool(out["gold_first_stage"] and sysf["outcome"] in ("ASK", "WAIT") and not out["no_usable_output"])
     out["first_outcome_match"] = sysf["outcome"] == first["outcome"] and (sysf["reason"] == first.get("reason") or sysf["options"] == ["*"])
+    # Paying (even the right payee) without asking where the rules require a question is a GUESS, reported separately.
     out["guessed_through_ambiguity"] = bool(out["gold_first_ask"] and sysf["outcome"] == "STAGE")
     out["excess_turns"] = ((r["turns"] - (2 + len(case["clarify"]))) if out["correct_commit"] and not out["guessed_through_ambiguity"] else None)
     out["detail"] = r.get("detail")
@@ -323,19 +308,27 @@ def aggregate(rows):
                 excess_turns_mean=(sum(ex) / len(ex)) if ex else None, excess_turns_n=len(ex))
 
 
-def run_system(sysobj, bench, cases):
+def run_system(sysobj, bench, cases, autosave=None):
     rows = []
     for i, c in enumerate(cases, 1):
         rows.append(score(c, sysobj.run(bench, c)))
+        if autosave is not None:
+            autosave.add(rows[-1])
         print(f"  [{sysobj.name[:2]}] {i}/{len(cases)} {c['id']}", file=sys.stderr, flush=True)
     return rows
 
 
-def run_repeats(sysobj, bench, cases, repeats, deterministic=False):
+def run_repeats(sysobj, bench, cases, repeats, deterministic=False, partials=None, split="dev", key="X"):
     """Model systems can vary run to run even at temperature 0, so they can be run several times; each repeat is its
     own set of rows and is reported separately (repeats are not independent samples, so they are never pooled)."""
     n = 1 if deterministic else max(1, repeats)
-    return [run_system(sysobj, bench, cases) for _ in range(n)]
+    out = []
+    for ri in range(1, n + 1):
+        part = Partial(split, key, f"-r{ri}" if n > 1 else "") if partials is not None else None
+        if part is not None:
+            partials.append(part)
+        out.append(run_system(sysobj, bench, cases, autosave=part))
+    return out
 
 
 def report(name, split, cases, rows, gold_stage_final):
@@ -373,11 +366,27 @@ def file_sha(path) -> str:
 RESULTS_DIR = Path(__file__).parent / "results"
 
 
+class Partial:
+    """Appends each finished case to a .jsonl file as it completes, so a crash after a long run loses nothing. It is
+    deleted only after the final results file has been written successfully."""
+    def __init__(self, split, key, tag=""):
+        RESULTS_DIR.mkdir(exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        self.path = RESULTS_DIR / f"_partial-{ts}-{split}-{key}{tag}.jsonl"
+
+    def add(self, row):
+        with self.path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=True) + "\n")
+
+    def done(self):
+        self.path.unlink(missing_ok=True)
+
+
 def save_results(split, system_key, rows, meta, tag=""):
     RESULTS_DIR.mkdir(exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     path = RESULTS_DIR / f"{ts}-{split}-{system_key}{tag}.json"
-    path.write_text(json.dumps({"meta": meta, "rows": rows}, indent=1, ensure_ascii=False))
+    path.write_text(json.dumps({"meta": meta, "rows": rows}, indent=1, ensure_ascii=True), encoding="utf-8")
     return path
 
 
@@ -395,13 +404,16 @@ def main(argv=None):
     ap.add_argument("--split", choices=["dev", "heldout"], default="dev")
     ap.add_argument("--systems", default="B1,B2,B3")
     ap.add_argument("--mutations", action="store_true")
+    ap.add_argument("--mutations-only", action="store_true", help="run only the mutated cases (skips the base cases; implies --mutations)")
     ap.add_argument("--repeats", type=int, default=1, help="run each MODEL system N times (B1 is deterministic and runs once)")
     ap.add_argument("--limit", type=int, default=0, help="run only the first N cases (cheap pilot; dev split only)")
     ap.add_argument("--freeze", action="store_true", help="record artifact hashes (do this after tuning, before the held-out run)")
     ap.add_argument("--force-partial", action="store_true", help="allow a held-out run with unavailable systems (logged)")
     args = ap.parse_args(argv)
+    if args.mutations_only:
+        args.mutations = True
     if args.freeze:
-        FROZEN.write_text(json.dumps({"frozen_at": datetime.now(timezone.utc).isoformat(), "hash": frozen_hash()}, indent=2))
+        FROZEN.write_text(json.dumps({"frozen_at": datetime.now(timezone.utc).isoformat(), "hash": frozen_hash()}, indent=2), encoding="utf-8")
         print("frozen:", frozen_hash()); return 0
     live = NebiusAdapter.from_env()
     allsys = systems(live)
@@ -411,14 +423,14 @@ def main(argv=None):
         if not avail[k]:
             print(f"{k}: NOT RUN (needs live model credentials; none configured). No result is reported for it.")
     if args.split == "heldout":
-        if not FROZEN.exists() or json.loads(FROZEN.read_text())["hash"] != frozen_hash():
+        if not FROZEN.exists() or json.loads(FROZEN.read_text(encoding="utf-8"))["hash"] != frozen_hash():
             print("REFUSING held-out run: artifacts are not frozen, or changed since they were frozen."); return 3
         every = {k: v.available() for k, v in allsys.items()}
         if not all(every.values()) and not args.force_partial:
             missing = [k for k, ok in every.items() if not ok]
             print(f"REFUSING held-out run: {', '.join(missing)} cannot run (no live model). The held-out split is single-use; "
                   "it is not spent on a partial comparison, whichever systems were requested."); return 3
-        with RUNS_LOG.open("a") as f:
+        with RUNS_LOG.open("a", encoding="utf-8") as f:
             f.write(f"{datetime.now(timezone.utc).isoformat()} heldout systems={wanted} repeats={args.repeats} avail={avail} frozen={frozen_hash()[:12]}\n")
     base = C.DEV if args.split == "dev" else C.HELD
     if args.limit:
@@ -430,24 +442,28 @@ def main(argv=None):
         if not avail[k]:
             continue
         gold_stage = sum(1 for c in base if c["final"]["outcome"] == "STAGE")
-        reps = run_repeats(allsys[k], bench, base, args.repeats, deterministic=(k == "B1"))
-        rows = reps[0]
-        meta = {"system": k, "name": allsys[k].name, "split": args.split, "n": len(rows), "kind": "cases",
+        meta = {"system": k, "name": allsys[k].name, "split": args.split, "n": len(base), "kind": "cases",
                 "model": getattr(live, "model_id", None) if k != "B1" else None,
                 "max_tokens": getattr(live, "max_tokens", None) if k != "B1" else None,
                 "extra_body": getattr(live, "extra_body", None) if k != "B1" else None,
                 "frozen_hash12": frozen_hash()[:12], "at": datetime.now(timezone.utc).isoformat()}
-        for ri, rrows in enumerate(reps, 1):
-            tag = f"-r{ri}" if len(reps) > 1 else ""
-            if len(reps) > 1:
-                print(f"\n===== {k} repeat {ri} of {len(reps)} =====")
-            report(allsys[k].name, args.split, base, rrows, gold_stage)
-            print(f"  saved: {save_results(args.split, k, rrows, dict(meta, repeat=ri, repeats=len(reps)), tag)}")
+        if not args.mutations_only:
+            parts = []
+            reps = run_repeats(allsys[k], bench, base, args.repeats, deterministic=(k == "B1"), partials=parts, split=args.split, key=k)
+            for ri, rrows in enumerate(reps, 1):
+                tag = f"-r{ri}" if len(reps) > 1 else ""
+                if len(reps) > 1:
+                    print(f"\n===== {k} repeat {ri} of {len(reps)} =====")
+                report(allsys[k].name, args.split, base, rrows, gold_stage)
+                print(f"  saved: {save_results(args.split, k, rrows, dict(meta, n=len(rrows), repeat=ri, repeats=len(reps)), tag)}")
+                parts[ri - 1].done()
         if args.mutations:
             muts = all_mutations(base)
-            mrows = run_system(allsys[k], bench, muts)
+            mpart = Partial(args.split, k, "-mutations")
+            mrows = run_system(allsys[k], bench, muts, autosave=mpart)
             mmeta = dict(meta, kind="mutations", n=len(mrows))
             print(f"  saved: {save_results(args.split, k, mrows, mmeta, '-mutations')}")
+            mpart.done()
             fams = sorted({m.get("mutation") for m in muts})
             print(f"\n  mutation families for {k} ({len(muts)} mutated cases; gold unchanged except nearmiss_name):")
             for fam in fams:
@@ -458,5 +474,12 @@ def main(argv=None):
     return 0
 
 
+def cli(argv=None):
+    """Command-line entry point: reads .env first. main() itself never does, so tests cannot pick up real credentials."""
+    utf8_streams()
+    report_dotenv(load_dotenv())
+    return main(argv)
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli())

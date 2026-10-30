@@ -12,7 +12,7 @@ from .intent import IntentError, validate_intent
 from .money import fmt_naira
 from .timeutil import iso, parse_iso
 
-MAX_MODEL_ATTEMPTS = 2  
+MAX_MODEL_ATTEMPTS = 2 
 
 
 class ApiError(Exception):
@@ -24,7 +24,7 @@ class ApiError(Exception):
 @dataclass
 class SessionContext:
     path: Path
-    now_fn: Callable[[], datetime]  # session-virtual clock
+    now_fn: Callable[[], datetime]
     session_id: str = ""
 
 
@@ -69,7 +69,7 @@ def run_parse(adapter, text: str) -> dict:
         except InferenceUnavailable as e:
             err = f"unavailable:{e}"
             continue
-        except OutputTruncated as e:  # an unfinished answer is unusable output, not an outage
+        except OutputTruncated as e:  
             raw, err = None, f"truncated:{e}"
             continue
         try:
@@ -188,7 +188,7 @@ def submit_instruction(ctx, text: str, idem_key: str, adapter):
         existing = conn.execute("SELECT * FROM instruction WHERE idempotency_key=?", (idem_key,)).fetchone()
         if existing:
             return _existing(ctx, conn, existing, text, adapter)
-        parse = run_parse(adapter, text)  
+        parse = run_parse(adapter, text) 
         try:
             with Tx(conn):
                 existing = conn.execute("SELECT * FROM instruction WHERE idempotency_key=?", (idem_key,)).fetchone()
@@ -394,6 +394,61 @@ def ledger_view(ctx):
                                        "amount_kobo": e.amount_kobo, "agreement_id": e.agreement_id,
                                        "occurred_at": e.occurred_at, "reconciliation": e.reconciliation})
         out["entries"].sort(key=lambda e: e["occurred_at"], reverse=True)
+        return out
+    finally:
+        conn.close()
+
+
+def _pending_status(latest, action_state, lapsed):
+    """Which incomplete state an instruction is in, from stored state only. None = nothing left to do."""
+    if latest.get("status") == "cancelled" or latest.get("outcome") is None:
+        return None
+    o = latest["outcome"]
+    if o == "STAGE":
+        if action_state == "STAGED":
+            return "expired" if lapsed else "awaiting_confirmation"
+        return {"EXPIRED": "expired", "INVALIDATED": "invalidated"}.get(action_state)  # COMMITTED/CANCELLED: done
+    return {"ASK": "needs_answer", "REFUSE": "refused", "WAIT": "waiting"}[o]
+
+
+def activity_view(ctx, limit: int = 30):
+    """Read-only history of what the system did, taken only from rows that already exist:
+    instruction, decision (immutable), staged_action and action_event. Writes nothing, decides nothing."""
+    conn = open_db(ctx)
+    try:
+        now_iso = iso(ctx.now_fn())
+        out = {"now": now_iso, "instructions": []}
+        rows = conn.execute("SELECT * FROM instruction ORDER BY created_at DESC, rowid DESC LIMIT ?", (limit,)).fetchall()
+        for ins in rows:
+            iid = ins["id"]
+            resolved = json.loads(ins["resolved_intent_json"])
+            decisions = []
+            for d in conn.execute("SELECT * FROM decision WHERE instruction_id=? ORDER BY seq", (iid,)).fetchall():
+                p = json.loads(d["payload_json"])
+                decisions.append({"id": d["id"], "seq": d["seq"], "outcome": d["outcome"], "reason": d["reason_code"],
+                                  "rule_version": d["rule_version"], "at": d["created_at"], "message": p.get("message"),
+                                  "options": [{"id": o["id"], "kind": o["kind"], "label": o["label"]} for o in p.get("options", [])],
+                                  "stale_selection": p.get("stale_selection", False),
+                                  "action_id": (p.get("draft") or {}).get("action_id")})
+            actions = []
+            for a in conn.execute("SELECT * FROM staged_action WHERE instruction_id=? ORDER BY created_at", (iid,)).fetchall():
+                events = [{"seq": e["seq"], "from_state": e["from_state"], "to_state": e["to_state"], "actor": e["actor"],
+                           "reason": e["reason"], "at": e["at"]}
+                          for e in conn.execute("SELECT * FROM action_event WHERE action_id=? ORDER BY seq", (a["id"],)).fetchall()]
+                actions.append({"id": a["id"], "decision_id": a["decision_id"], "state": a["state"], "state_reason": a["state_reason"],
+                                "amount_kobo": a["amount_kobo"], "recipient_id": a["recipient_person_id"],
+                                "expires_at": a["expires_at"], "ledger_entry_id": a["ledger_entry_id"],
+                                "lapsed": a["state"] == "STAGED" and a["expires_at"] <= now_iso, "events": events})
+            latest = _latest_view(conn, iid)
+            rid = (latest.get("draft") or {}).get("recipient_id") or (latest.get("details") or {}).get("recipient")
+            person = conn.execute("SELECT id, legal_name, payee_status FROM person WHERE id=?", (rid,)).fetchone() if rid else None
+            la = next((a for a in actions if latest.get("draft") and a["id"] == latest["draft"]["action_id"]), None)
+            out["instructions"].append({
+                "instruction_id": iid, "raw_text": ins["raw_text"], "created_at": ins["created_at"], "status": ins["status"],
+                "parse": resolved.get("parse", {}), "intent": resolved.get("intent"),
+                "decisions": decisions, "actions": actions, "latest": latest,
+                "recipient": {"id": person["id"], "name": person["legal_name"], "payee_status": person["payee_status"]} if person else None,
+                "pending_status": _pending_status(latest, la["state"] if la else None, bool(la and la["lapsed"]))})
         return out
     finally:
         conn.close()

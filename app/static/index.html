@@ -6,99 +6,114 @@
 <title>The Usual</title>
 <style>
   :root {
-    --paper: #f6f8fb; --sheet: #ffffff; --ink: #19202e; --muted: #5b6678; --rule: #c9d4e3;
-    --margin: #c4372c; --stage: #1c7a52; --ask: #a8660c; --wait: #54627a; --refuse: #c4372c;
-    --focus: #1747b8;
+    --paper: #f6f8fb; --sheet: #ffffff; --ink: #19202e; --muted: #5b6678; --rule: #d3dbe8;
+    --stage: #1c7a52; --ask: #a8660c; --wait: #54627a; --refuse: #c4372c; --focus: #1747b8;
     --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html { background: var(--paper); }
-  body { margin: 0; font: 16px/1.5 var(--sans); color: var(--ink);
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(160,180,210,.22) 31px, rgba(160,180,210,.22) 32px); }
+  body { margin: 0; font: 16px/1.5 var(--sans); color: var(--ink); }
   :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-  header { padding: 28px clamp(16px, 4vw, 48px) 8px; max-width: 1180px; margin: 0 auto; }
-  h1 { font: 700 clamp(30px, 4.4vw, 44px)/1.1 var(--serif); margin: 0 0 6px; letter-spacing: -.01em; }
-  .tagline { font: 400 clamp(17px, 2vw, 20px)/1.4 var(--serif); color: var(--ink); margin: 0 0 10px; max-width: 46ch; }
-  .sim { display: inline-block; font-size: 14px; color: var(--muted); }
+  a { color: var(--focus); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--paper); padding-top: 16px; }
+  .slip, h2.page { scroll-margin-top: 150px; }
+  h1 { font: 700 clamp(24px, 4vw, 30px)/1.1 var(--serif); margin: 0 0 2px; letter-spacing: -.01em; }
+  .sim { font-size: 14px; color: var(--muted); margin: 0; }
   .sim b { color: var(--ink); }
-  #banner { display: none; max-width: 1180px; margin: 12px auto 0; padding: 0 clamp(16px, 4vw, 48px); }
-  #banner .inner { border: 2px solid var(--margin); background: #fff4f2; padding: 14px 16px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+  nav#nav { display: flex; gap: 4px; margin-top: 10px; border-bottom: 1.5px solid var(--ink); overflow-x: auto; }
+  nav#nav a { padding: 10px 14px 9px; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 4px solid transparent; margin-bottom: -1.5px; white-space: nowrap; min-height: 44px; }
+  nav#nav a:hover { color: var(--ink); }
+  @media (max-width: 480px) { nav#nav { gap: 0; justify-content: space-between; } nav#nav a { padding: 10px 4px 9px; font-size: 13.5px; } .wrap { padding-left: 12px; padding-right: 12px; } }
+  nav#nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--ink); }
+  #banner { display: none; margin-top: 12px; }
+  #banner .inner { border: 2px solid var(--refuse); background: #fff4f2; padding: 14px 16px; display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
   #banner p { margin: 0; max-width: 70ch; }
-  main { max-width: 1180px; margin: 0 auto; padding: 16px clamp(16px, 4vw, 48px) 64px;
-    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 32px; align-items: start; }
-  @media (max-width: 880px) { main { grid-template-columns: 1fr; } }
+  main { padding-top: 24px; padding-bottom: 72px; }
+  h2.page { font: 700 clamp(22px, 3vw, 28px)/1.2 var(--serif); margin: 0 0 4px; }
+  .purpose { color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+  h3 { font: 700 18px/1.3 var(--serif); margin: 28px 0 8px; }
   form { display: flex; flex-direction: column; gap: 10px; }
   label { font-weight: 600; }
   textarea { font: 400 18px/1.4 var(--serif); padding: 12px 14px; border: 1.5px solid var(--ink); background: var(--sheet); min-height: 84px; resize: vertical; border-radius: 2px; width: 100%; }
+  select { font: 400 15px var(--sans); padding: 8px 10px; border: 1.5px solid var(--ink); background: var(--sheet); border-radius: 2px; max-width: 100%; min-height: 44px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   button { font: 600 16px var(--sans); padding: 10px 18px; border: 1.5px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; border-radius: 2px; min-height: 44px; }
   button.secondary { background: var(--sheet); color: var(--ink); }
   button.danger { background: var(--sheet); color: var(--refuse); border-color: var(--refuse); }
   button[disabled] { opacity: .5; cursor: not-allowed; }
+  a.btn { display: inline-flex; align-items: center; font: 600 15px var(--sans); padding: 8px 14px; border: 1.5px solid var(--ink); color: var(--ink); text-decoration: none; border-radius: 2px; min-height: 44px; background: var(--sheet); }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; }
   .chip { font: 400 14px var(--sans); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); padding: 6px 10px; min-height: 36px; border-radius: 999px; }
   .parser { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
-  #decision { margin-top: 24px; }
-  .slip { position: relative; background: var(--sheet); border: 1px solid var(--rule); padding: 20px 22px 20px 34px; box-shadow: 0 1px 0 var(--rule); }
+  #decision { margin-top: 28px; }
+  .slip { position: relative; background: var(--sheet); border: 1px solid var(--rule); padding: 20px 22px 20px 34px; }
   .slip::before { content: ""; position: absolute; left: 14px; top: 0; bottom: 0; width: 3px; background: var(--c, var(--wait)); }
   .slip.stage { --c: var(--stage); } .slip.ask { --c: var(--ask); } .slip.refuse { --c: var(--refuse); } .slip.wait { --c: var(--wait); } .slip.done { --c: var(--stage); }
-  .tag { display: inline-block; font-weight: 700; font-size: 14px; color: var(--c); border: 1.5px solid var(--c); padding: 1px 8px; border-radius: 2px; margin-bottom: 8px; }
-  .slip h2 { font: 700 clamp(22px, 3vw, 28px)/1.2 var(--serif); margin: 0 0 6px; }
+  .tag { display: inline-block; font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--c, var(--wait)); border: 1.5px solid var(--c, var(--wait)); padding: 1px 8px; border-radius: 2px; margin-bottom: 8px; }
+  .tag.stage, .tag.ok { --c: var(--stage); } .tag.ask { --c: var(--ask); } .tag.refuse { --c: var(--refuse); } .tag.wait { --c: var(--wait); }
+  .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+  .slip h2 { font: 700 clamp(22px, 3vw, 28px)/1.2 var(--serif); margin: 0 0 2px; }
+  .slip .item { color: var(--muted); margin: 0 0 2px; }
+  .slip .amount { font: 700 clamp(28px, 5vw, 38px)/1.2 var(--serif); margin: 0 0 10px; font-variant-numeric: tabular-nums; }
   .slip p { margin: 0 0 12px; max-width: 62ch; }
   .nothing { font-weight: 600; }
-  .figures { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-variant-numeric: tabular-nums; }
-  .figures th, .figures td { text-align: left; padding: 5px 0; border-bottom: 1px solid var(--rule); font-weight: 400; vertical-align: top; }
-  .figures td:last-child { text-align: right; white-space: nowrap; }
-  .figures tr.total td, .figures tr.total th { font-weight: 700; border-bottom: 2px solid var(--ink); }
+  table.kv { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-variant-numeric: tabular-nums; }
+  table.kv th, table.kv td { text-align: left; padding: 6px 0; border-bottom: 1px solid var(--rule); font-weight: 400; vertical-align: top; }
+  table.kv th { color: var(--muted); width: 48%; padding-right: 12px; }
+  table.kv td { text-align: right; }
+  table.kv tr.total th, table.kv tr.total td { font-weight: 700; color: var(--ink); border-bottom: 2px solid var(--ink); }
   .note { font-size: 14px; color: var(--muted); }
-  .warn { border: 1.5px solid var(--margin); background: #fff4f2; padding: 8px 12px; margin: 8px 0 12px; font-weight: 600; }
+  .warn { border: 1.5px solid var(--refuse); background: #fff4f2; padding: 8px 12px; margin: 8px 0 12px; font-weight: 600; }
   .opts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0 4px; }
   .opts button { text-align: left; background: var(--sheet); color: var(--ink); font-weight: 500; }
   .opts button:hover { background: #eef3fb; }
-  details { margin: 8px 0 12px; } summary { cursor: pointer; font-weight: 600; }
-  aside h2 { font: 700 22px/1.2 var(--serif); margin: 0 0 8px; }
-  .person { background: var(--sheet); border: 1px solid var(--rule); padding: 10px 14px; margin-bottom: 8px; }
-  .person .n { font-weight: 700; } .person .st { font-size: 13px; color: var(--muted); }
+  .quote { font: italic 400 19px/1.4 var(--serif); border-left: 3px solid var(--ink); padding: 2px 0 2px 14px; margin: 6px 0 4px; }
+  .decisionline { font: 700 clamp(20px, 3vw, 26px)/1.2 var(--serif); margin: 4px 0 6px; }
+  .person { border-top: 1px solid var(--rule); padding: 12px 0; }
+  .person .n { font-weight: 700; } .person .st { font-size: 14px; color: var(--muted); }
   .person .st.no { color: var(--refuse); font-weight: 700; }
-  .person ul { margin: 4px 0 0; padding-left: 18px; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .person ul { margin: 6px 0 0; padding-left: 18px; font-variant-numeric: tabular-nums; }
   table.entries { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; background: var(--sheet); border: 1px solid var(--rule); }
-  table.entries th, table.entries td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); }
-  table.entries td.amt { text-align: right; }
-  .clock { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+  table.entries th, table.entries td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); }
+  table.entries td.amt, table.entries th.amt { text-align: right; }
+  .clock { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  .run { border-top: 1px solid var(--rule); padding: 18px 0 6px; }
+  .run .req { font: 600 18px/1.3 var(--serif); margin: 0 0 8px; }
+  ol.timeline { list-style: none; margin: 0 0 8px; padding: 0 0 0 18px; border-left: 2px solid var(--rule); }
+  ol.timeline li { position: relative; padding: 0 0 14px 14px; }
+  ol.timeline li::before { content: ""; position: absolute; left: -24px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--sheet); border: 2px solid var(--c, var(--ink)); }
+  ol.timeline li.stage { --c: var(--stage); } ol.timeline li.ask { --c: var(--ask); } ol.timeline li.refuse { --c: var(--refuse); } ol.timeline li.wait { --c: var(--wait); }
+  ol.timeline .t { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ol.timeline .what { font-weight: 600; }
+  ol.timeline .detail { font-size: 14px; color: var(--muted); margin: 0; }
+  .pend { border-top: 1px solid var(--rule); padding: 18px 0; }
+  .pend h3 { margin: 6px 0 4px; }
+  .pend p { margin: 0 0 8px; max-width: 62ch; }
+  .pend .label { font-weight: 700; }
+  .empty { color: var(--muted); padding: 12px 0; }
   .sr { position: absolute; left: -9999px; }
   @media (prefers-reduced-motion: no-preference) { .slip { animation: land .18s ease-out; } @keyframes land { from { transform: translateY(4px); opacity: .6; } to { transform: none; opacity: 1; } } }
 </style>
 </head>
 <body>
-<header>
+<header class="wrap">
   <h1>The Usual</h1>
-  <p class="tagline">Say it the way you always do. I turn it into a draft with the evidence behind it, and nothing is paid until you confirm.</p>
-  <span class="sim"><b>Simulated payments only.</b> No real money moves and no bank is connected.</span>
+  <p class="sim"><b>Simulated payments only.</b> No real money moves and no bank is connected.</p>
+  <nav id="nav" aria-label="Pages">
+    <a href="#/prepare">Prepare</a>
+    <a href="#/evidence">Evidence</a>
+    <a href="#/ledger">Ledger</a>
+    <a href="#/activity">Activity</a>
+    <a href="#/pending">Pending</a>
+  </nav>
 </header>
-<div id="banner" role="alert"><div class="inner">
+<div class="wrap" id="banner" role="alert"><div class="inner">
   <p><b>Your previous session ended.</b> This is a new session with fresh sample data. Earlier drafts, ledger entries and history were not restored.</p>
   <button class="secondary" id="banner-ok" type="button">Got it</button>
 </div></div>
-<main>
-  <section aria-labelledby="ask-h">
-    <form id="form">
-      <label id="ask-h" for="text">What should I do?</label>
-      <textarea id="text" name="text" maxlength="500" placeholder="Pay Emeka the balance for those chairs." required></textarea>
-      <div class="row"><button type="submit" id="go">Prepare it</button></div>
-      <div class="chips" id="chips" aria-label="Example instructions"></div>
-      <p class="parser" id="parser"></p>
-    </form>
-    <div id="decision" aria-live="polite"></div>
-  </section>
-  <aside aria-labelledby="ledger-h">
-    <h2 id="ledger-h">Your ledger</h2>
-    <p class="clock" id="clock"></p>
-    <div id="people"></div>
-    <h3 style="font:700 17px var(--serif);margin:16px 0 6px">Recent entries</h3>
-    <table class="entries" id="entries"><thead><tr><th>Date</th><th>Who</th><th>Type</th><th class="amt">Amount</th></tr></thead><tbody></tbody></table>
-  </aside>
-</main>
+<main class="wrap" id="view" aria-live="polite"></main>
 <script>
 "use strict";
 const $ = (s) => document.querySelector(s);
@@ -114,17 +129,25 @@ function h(tag, attrs, ...kids) {
 const naira = (k) => { const neg = k < 0; k = Math.abs(k); const n = Math.floor(k / 100), r = k % 100;
   return (neg ? "-" : "") + "₦" + n.toLocaleString("en-NG") + (r ? "." + String(r).padStart(2, "0") : ""); };
 const wat = (iso) => new Date(iso).toLocaleString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const watSec = (iso) => new Date(iso).toLocaleString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" });
 const EXAMPLES = ["Pay Emeka the balance for those chairs.", "Send the usual to Emeka.", "Pay Chidi the balance.", "Pay Amaka 50k", "Pay Bassey 80k"];
+const PAGES = ["prepare", "evidence", "ledger", "activity", "pending"];
 
-let sid = sessionStorage.getItem("usual_sid"), draft = null, ledgerNow = null, ledgerAt = 0, liveModel = false, parserLabel = "", workTimer = null;
+// Only session bookkeeping lives in the browser: the session id, which instruction is "current", and one commit key per
+// draft (so repeating Confirm is idempotent). Money, ledger and decisions are always read from the server.
+let sid = sessionStorage.getItem("usual_sid"), liveModel = false, parserLabel = "", ledgerNow = null, ledgerAt = 0;
+let workTimer = null, working = false, draft = null, navToken = 0, typed = "";
+const currentIid = () => sessionStorage.getItem("usual_iid");
+const setCurrent = (id) => { if (id) sessionStorage.setItem("usual_iid", id); };
+const commitKeyFor = (aid) => { const k = "usual_ck_" + aid; let v = sessionStorage.getItem(k); if (!v) { v = crypto.randomUUID(); sessionStorage.setItem(k, v); } return v; };
 
 async function newSession(showBanner) {
   const r = await fetch("/api/sessions", { method: "POST" });
-  if (!r.ok) { $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("h2", {}, "Could not start a session"), h("p", {}, "The server is at capacity or unavailable. Try again in a minute."))); throw new Error("no session"); }
+  if (!r.ok) { $("#view").replaceChildren(slipEl("refuse", "Error", "Could not start a session", "The server is at capacity or unavailable. Try again in a minute.")); throw new Error("no session"); }
   const j = await r.json();
-  sid = j.session_id; sessionStorage.setItem("usual_sid", sid);
+  sid = j.session_id; sessionStorage.setItem("usual_sid", sid); sessionStorage.removeItem("usual_iid");
   if (showBanner) $("#banner").style.display = "block";
-  draft = null; $("#decision").replaceChildren();
+  draft = null;
   return j;
 }
 async function api(path, method, body) {
@@ -135,90 +158,156 @@ async function api(path, method, body) {
     text = await r.text();
   } catch (e) { if (e.name === "AbortError") { const t = new Error("timeout"); t.timeout = true; throw t; } throw e; }
   finally { clearTimeout(timer); } let j; try { j = JSON.parse(text); } catch { j = { error: "bad_response" }; }
-  if (r.status === 410 && j.error === "session_gone") { await newSession(true); await refreshLedger(); const e = new Error("session_gone"); e.gone = true; throw e; }
+  if (r.status === 410 && j.error === "session_gone") { await newSession(true); setTimeout(route, 0); const e = new Error("session_gone"); e.gone = true; throw e; }
   return { status: r.status, body: j };
 }
-async function refreshLedger() {
+async function getLedger() {
   const { body } = await api("/ledger");
   ledgerNow = Date.parse(body.now); ledgerAt = Date.now();
-  $("#clock").textContent = "Demo clock: " + wat(body.now) + " (Lagos time). It starts at the same moment every session.";
-  $("#people").replaceChildren(...body.people.map((p) => h("div", { class: "person" },
-    h("div", { class: "n" }, p.name, " ", h("span", { class: "st" }, "(" + p.role + ")")),
-    h("div", { class: "st" + (p.payee_status === "approved" ? "" : " no") }, p.payee_status === "approved" ? "Approved payee" : "Not an approved payee: payments are refused"),
-    p.agreements.length ? h("ul", {}, p.agreements.map((a) => h("li", {}, a.description + ": " + naira(a.outstanding_kobo) + " outstanding of " + naira(a.total_kobo)))) : null)));
-  $("#entries tbody").replaceChildren(...body.entries.slice(0, 14).map((e) => h("tr", {},
-    h("td", {}, wat(e.occurred_at).split(",")[0]), h("td", {}, e.person), h("td", {}, e.type.replace("_", " ") + (e.reconciliation !== "reconciled" ? " (" + e.reconciliation + ")" : "")), h("td", { class: "amt" }, naira(e.amount_kobo)))));
+  return body;
 }
+async function getActivity() { const { body } = await api("/activity"); return body; }
 
+function slipEl(kind, tag, title, text) {
+  return h("div", { class: "slip " + kind }, h("span", { class: "tag" }, tag), title ? h("h2", {}, title) : null, text ? h("p", {}, text) : null);
+}
+const link = (page, arg, text, cls) => h("a", { href: "#/" + page + (arg ? "/" + arg : ""), class: cls || null }, text);
+function pageHead(title, purpose) { return [h("h2", { class: "page" }, title), h("p", { class: "purpose" }, purpose)]; }
+function kv(rows, cls) { return h("table", { class: "kv" + (cls ? " " + cls : "") }, h("tbody", {}, rows.filter(Boolean).map(([k, v, total]) => h("tr", total ? { class: "total" } : {}, h("th", { scope: "row" }, k), h("td", {}, v))))); }
+
+/* ---------------------------------------------------------------- router */
+function parseHash() {
+  const m = location.hash.match(/^#\/([a-z]+)(?:\/([0-9a-f]+))?$/);
+  return m && PAGES.includes(m[1]) ? { page: m[1], arg: m[2] || null } : { page: "prepare", arg: null };
+}
+async function route() {
+  const { page, arg } = parseHash(), token = ++navToken;
+  for (const a of document.querySelectorAll("#nav a")) { if (a.getAttribute("href") === "#/" + page) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); }
+  if (arg) setCurrent(arg);
+  const view = $("#view"); view.replaceChildren();
+  try { await RENDER[page](view, arg, () => token === navToken); }
+  catch (e) { console.error(e); if (!e.gone && token === navToken) view.replaceChildren(slipEl(e.timeout ? "wait" : "refuse", e.timeout ? "Too slow" : "Offline", "", e.timeout ? "That took too long. Nothing was paid." : "I couldn't reach the server. Nothing was paid. Check your connection and try again.")); }
+}
+window.addEventListener("hashchange", route);
+
+/* ---------------------------------------------------------------- Prepare */
+async function renderPrepare(view, arg, live) {
+  view.append(...pageHead("Prepare", "Turn a request into a proposed action. Nothing is paid until you confirm."));
+  const ta = h("textarea", { id: "text", name: "text", maxlength: "500", placeholder: "Pay Emeka the balance for those chairs.", required: "required" });
+  ta.value = typed;
+  ta.addEventListener("input", () => { typed = ta.value; });
+  const form = h("form", { id: "form" },
+    h("label", { id: "ask-h", for: "text" }, "What should I do?"), ta,
+    h("div", { class: "row" }, h("button", { type: "submit", id: "go" }, working ? "Preparing…" : "Prepare it")),
+    h("div", { class: "chips", id: "chips", "aria-label": "Example instructions" }, EXAMPLES.map((t) => h("button", { type: "button", class: "chip", onclick: () => { ta.value = t; typed = t; ta.focus(); } }, t))),
+    h("p", { class: "parser", id: "parser" }, parserLabel));
+  form.addEventListener("submit", (e) => { e.preventDefault(); const t = ta.value.trim(); if (t) submit(t); });
+  if (working) form.querySelector("#go").disabled = true;
+  view.append(form, h("div", { id: "decision", "aria-live": "polite" }));
+  refreshBudget();
+  if (working) { showWorking(); return; }
+  const iid = currentIid();
+  if (!iid) return;
+  const act = await getActivity();
+  if (!live()) return;
+  const i = act.instructions.find((x) => x.instruction_id === iid);
+  if (i && $("#decision")) renderInstruction(i);
+}
+async function refreshBudget() {
+  const el = $("#parser"); if (!el) return;
+  if (!liveModel) { el.textContent = parserLabel; return; }
+  try { const { body } = await api("/budget"); if ($("#parser")) $("#parser").textContent = parserLabel + " Model calls this session: " + body.session_used + " of " + body.session_cap + "."; } catch (e) { /* the line above stays */ }
+}
 function showWorking() {
-  const start = Date.now();
-  const note = h("p", { class: "note" });
+  const start = Date.now(), note = h("p", { class: "note" });
   const tick = () => { const sec = Math.floor((Date.now() - start) / 1000);
     note.textContent = liveModel ? "Waiting for the language model: " + sec + "s. A reasoning model can take 10 to 40 seconds. Nothing is paid while I read." : "Reading your instruction."; };
   tick(); clearInterval(workTimer); workTimer = setInterval(tick, 500);
-  $("#decision").replaceChildren(h("div", { class: "slip wait", "aria-busy": "true" }, h("span", { class: "tag" }, "Reading"), h("h2", {}, "Reading your instruction"), note));
+  const box = $("#decision"); if (box) box.replaceChildren(h("div", { class: "slip wait", "aria-busy": "true" }, h("span", { class: "tag" }, "Reading"), h("h2", {}, "Reading your instruction"), note));
 }
 function stopWorking() { clearInterval(workTimer); workTimer = null; }
-async function refreshBudget() {
-  const line = parserLabel;
-  if (!liveModel) { $("#parser").textContent = line; return; }
-  try { const { body } = await api("/budget"); $("#parser").textContent = line + " Model calls this session: " + body.session_used + " of " + body.session_cap + "."; } catch (e) { $("#parser").textContent = line; }
-}
-function headline(d) { return "Pay " + d.amount_display + " to " + d.recipient_name; }
-function figures(d) {
-  const c = d.computation, rows = [];
+function show(el) { const box = $("#decision"); if (box) box.replaceChildren(el); return !!box; }
+
+const paidOf = (c) => (c.paid_kobo != null ? c.paid_kobo : c.payments.reduce((n, p) => n + p.effective_kobo, 0));
+function statement(d) {
+  const c = d.computation, rows = [["Payee", d.recipient_name]];
+  rows.push(["Item", d.agreement_description || d.purpose_text || "Not linked to an agreement"]);
   if (d.source === "outstanding_balance" && c.agreed_total_kobo != null) {
-    rows.push(h("tr", {}, h("th", {}, "Agreed: " + (d.agreement_description || "")), h("td", {}, naira(c.agreed_total_kobo))));
-    for (const p of c.payments) rows.push(h("tr", {}, h("th", {}, "Already paid (" + p.entry_id + ")" + (p.effective_kobo !== p.amount_kobo ? ", after reversals" : "")), h("td", {}, "-" + naira(p.effective_kobo))));
-    rows.push(h("tr", { class: "total" }, h("th", {}, "Outstanding"), h("td", {}, naira(c.outstanding_kobo))));
+    rows.push(["Original amount", naira(c.agreed_total_kobo)]);
+    rows.push(["Already paid", naira(paidOf(c))]);
+    rows.push(["Outstanding", naira(c.outstanding_kobo)]);
   } else if (d.source === "recurring_pattern") {
-    for (const w of c.window) rows.push(h("tr", {}, h("th", {}, "Earlier payment (" + w.entry_id + ")"), h("td", {}, naira(w.effective_kobo))));
-    rows.push(h("tr", { class: "total" }, h("th", {}, "The usual, all identical"), h("td", {}, naira(c.pattern_kobo))));
+    for (const w of c.window) rows.push(["Earlier payment (" + w.entry_id + ")", naira(w.effective_kobo)]);
+    rows.push(["The usual, all identical", naira(c.pattern_kobo)]);
   } else {
-    rows.push(h("tr", { class: "total" }, h("th", {}, "Amount you stated"), h("td", {}, naira(d.stated_amount_kobo != null ? d.stated_amount_kobo : d.amount_kobo))));
-    if (c.outstanding_kobo_if_linked != null) rows.push(h("tr", {}, h("th", {}, "Outstanding on " + d.agreement_description), h("td", {}, naira(c.outstanding_kobo_if_linked))));
+    rows.push(["Amount you stated", naira(d.stated_amount_kobo != null ? d.stated_amount_kobo : d.amount_kobo)]);
+    if (c.outstanding_kobo_if_linked != null) rows.push(["Outstanding on " + d.agreement_description, naira(c.outstanding_kobo_if_linked)]);
   }
-  return h("table", { class: "figures" }, h("tbody", {}, rows));
+  rows.push(["Proposed payment", naira(d.amount_kobo), true]);
+  return rows;
 }
-function evidenceBox(d) {
-  const lines = [];
-  for (const e of d.evidence) if (e.table !== "instruction") lines.push(h("li", {}, e.id + ": " + e.summary));
-  const ex = d.excluded.map((e) => h("li", {}, e.entry_id + ": " + naira(e.amount_kobo) + " on " + wat(e.occurred_at).split(",")[0] + ", not linked to any agreement, so not counted." + (e.possibly_applicable ? " It may be related." : "")));
-  const nl = d.not_linked_balances.map((b) => h("li", {}, b.description + " still shows " + naira(b.outstanding_kobo) + " outstanding. This payment is not linked to it."));
-  if (!lines.length && !ex.length && !nl.length) return h("p", { class: "note" }, "This amount rests only on what you typed. No ledger record backs it, and no agreement was involved.");
-  return h("details", {}, h("summary", {}, "Evidence (" + lines.length + " " + (lines.length === 1 ? "record" : "records") + ")"), h("ul", {}, lines), ex.length ? h("p", { class: "note" }, "Not counted:") : null, ex.length ? h("ul", {}, ex) : null, nl.length ? h("ul", {}, nl) : null);
+function renderDraft(v, ledgerPeople) {
+  const d = v.draft, person = (ledgerPeople || []).find((p) => p.id === d.recipient_id);
+  draft = { action_id: d.action_id, payload_hash: d.payload_hash, expires_at: d.expires_at, commitKey: commitKeyFor(d.action_id), instruction_id: v.instruction_id };
+  const rows = statement(d);
+  if (person) rows.splice(1, 0, ["Payee status", person.payee_status === "approved" ? "Approved payee" : "Not an approved payee"]);
+  const slip = h("div", { class: "slip stage" },
+    h("p", { class: "eyebrow" }, "Proposed action"),
+    h("h2", {}, "Pay " + d.recipient_name),
+    h("p", { class: "item" }, d.agreement_description || d.purpose_text || "No agreement linked"),
+    h("p", { class: "amount" }, d.amount_display),
+    h("p", { class: "nothing" }, "Nothing has been paid. This is a draft until you confirm."),
+    kv(rows));
+  if (d.override_over_kobo) slip.append(h("div", { class: "warn" }, "Override: this is " + naira(d.override_over_kobo) + " MORE than is owed on this agreement. It will be recorded as an overpayment."));
+  if (d.agreement_id == null && d.not_linked_balances.length === 0 && d.source === "explicit") slip.append(h("p", { class: "note" }, "This payment is not linked to an agreement."));
+  slip.append(h("p", { class: "note", id: "ttl" }), h("p", { class: "warn", id: "conn", hidden: "hidden" }));
+  slip.append(h("div", { class: "row" },
+    h("button", { type: "button", id: "confirm", onclick: confirmDraft }, "Confirm payment"),
+    h("button", { type: "button", class: "danger", id: "refuse", onclick: refuseDraft }, "Refuse draft"),
+    link("evidence", v.instruction_id, "Inspect evidence", "btn")));
+  return slip;
 }
-function render(v) {
-  const box = $("#decision");
-  if (v.status === "cancelled") { box.replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Cancelled"), h("p", {}, "Cancelled. Nothing was prepared or paid."))); return; }
+function render(v, ledgerPeople) {
+  if (v.status === "cancelled") return show(slipEl("wait", "Cancelled", "", "Cancelled. Nothing was prepared or paid."));
   const kind = (v.outcome || "wait").toLowerCase();
   const labels = { stage: "Draft ready", ask: "One answer needed", refuse: "Refused", wait: "Waiting" };
-  const slip = h("div", { class: "slip " + kind });
-  slip.append(h("span", { class: "tag" }, labels[kind] || v.outcome));
-  if (v.outcome === "STAGE") {
-    draft = Object.assign({}, v.draft, { commitKey: crypto.randomUUID(), instruction_id: v.instruction_id });
-    const d = v.draft;
-    slip.append(h("h2", {}, headline(d)));
-    slip.append(h("p", { class: "nothing" }, "Nothing has been paid. This is a draft until you confirm."));
-    slip.append(figures(d));
-    if (d.override_over_kobo) slip.append(h("div", { class: "warn" }, "Override: this is " + naira(d.override_over_kobo) + " MORE than is owed on this agreement. It will be recorded as an overpayment."));
-    if (d.agreement_id == null && d.not_linked_balances.length === 0 && d.source === "explicit") slip.append(h("p", { class: "note" }, "This payment is not linked to an agreement."));
-    slip.append(evidenceBox(d));
-    slip.append(h("p", { class: "note", id: "ttl" }));
-    slip.append(h("div", { class: "row" },
-      h("button", { type: "button", id: "confirm", onclick: confirmDraft }, "Confirm payment"),
-      h("button", { type: "button", class: "secondary", onclick: cancelDraft }, "Cancel")));
-    tick();
-  } else {
+  let slip;
+  if (v.outcome === "STAGE") { slip = renderDraft(v, ledgerPeople); }
+  else {
     draft = null;
+    slip = h("div", { class: "slip " + kind }, h("span", { class: "tag" }, labels[kind] || v.outcome));
     slip.append(h("h2", {}, v.outcome === "ASK" ? "I need to check one thing" : v.outcome === "REFUSE" ? "I won't prepare this" : "I can't proceed yet"));
     slip.append(h("p", {}, v.message));
     if (v.stale_selection) slip.append(h("p", { class: "note" }, "Things changed since you chose, so I dropped that choice and asked again."));
     if (v.outcome === "WAIT") slip.append(h("div", { class: "row" }, h("button", { type: "button", class: "secondary", onclick: () => retry(v.instruction_id) }, "Try again")));
     if (v.options && v.options.length) slip.append(h("div", { class: "opts" }, v.options.map((o) => h("button", { type: "button", onclick: () => choose(v, o) }, o.label))));
+    slip.append(h("p", { class: "note" }, link("evidence", v.instruction_id, "Why? See the evidence"), v.outcome === "ASK" ? null : " · ", v.outcome === "ASK" ? null : link("pending", null, "See Pending")));
   }
-  box.replaceChildren(slip);
+  if (!show(slip)) return false;
   slip.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  if (v.outcome === "STAGE") tick();
+  return true;
+}
+// Re-draw a stored instruction (page reload, coming back from another page): everything comes from the server's state.
+function renderInstruction(i) {
+  const v = i.latest;
+  if (i.status === "cancelled") return render({ status: "cancelled" });
+  if (v.outcome === "STAGE") {
+    const a = i.actions.find((x) => x.id === v.draft.action_id), st = a ? a.state : "STAGED";
+    draft = null;
+    if (st === "COMMITTED") return show(doneSlip({ amount_display: v.draft.amount_display, recipient: v.draft.recipient_name, ledger_entry_id: a.ledger_entry_id, override_over_kobo: v.draft.override_over_kobo }));
+    if (st === "CANCELLED") return show(slipEl("wait", "Refused", "", "You refused this draft. Nothing was paid."));
+    if (st === "EXPIRED" || (a && a.lapsed)) return show(slipEl("refuse", "Not paid", "Nothing was paid", "This draft expired. Ask again."));
+    if (st === "INVALIDATED") return show(slipEl("refuse", "Not paid", "Nothing was paid", "The ledger changed after this draft was prepared, so it was not paid. Ask again to get a fresh draft."));
+    return getLedger().then((l) => render(v, l.people));
+  }
+  return render(v);
+}
+function doneSlip(b) {
+  return h("div", { class: "slip done" }, h("span", { class: "tag" }, "Recorded (simulated)"),
+    h("h2", {}, b.amount_display + " to " + b.recipient),
+    h("p", {}, "Recorded as " + b.ledger_entry_id + (b.override_over_kobo ? ", including a " + naira(b.override_over_kobo) + " overpayment you approved." : ".") + " No real money moved."),
+    h("p", { class: "note" }, link("ledger", null, "See the Ledger"), " · ", link("activity", null, "See Activity")));
 }
 function tick() {
   const el = $("#ttl"); if (!el || !draft) return;
@@ -227,66 +316,204 @@ function tick() {
   if (left > 0) setTimeout(tick, 1000);
 }
 async function submit(text) {
-  $("#go").disabled = true; $("#go").textContent = "Preparing…";
+  const go = $("#go"); go.disabled = true; go.textContent = "Preparing…";
+  working = true;
   try {
     showWorking();                 // replace the previous answer at once: never leave a stale result on screen
-    await refreshLedger();
+    const led = await getLedger();
     const { status, body } = await api("/instructions", "POST", { text, idempotency_key: crypto.randomUUID() });
-    stopWorking();
-    if (status !== 200) return showError(body);
-    render(body);
+    stopWorking(); working = false;
+    if (status !== 200) return show(slipEl("refuse", "Error", "", body.message || body.error || "Something went wrong."));
+    setCurrent(body.instruction_id);
+    if (parseHash().page === "prepare" && location.hash !== "#/prepare") history.replaceState(null, "", "#/prepare");
+    render(body, led.people);
     refreshBudget();
-  } catch (e) { stopWorking(); if (!e.gone) (e.timeout ? showTimeout : showNetwork)(e); } finally { $("#go").disabled = false; $("#go").textContent = "Prepare it"; }
+  } catch (e) { stopWorking(); working = false; if (!e.gone) show(e.timeout ? slipEl("wait", "Too slow", "", "That took too long, so I stopped waiting. Nothing was paid. Try again.") : slipEl("wait", "Offline", "", "I couldn't reach the server. Nothing was paid. Check your connection and try again.")); }
+  finally { working = false; const g = $("#go"); if (g) { g.disabled = false; g.textContent = "Prepare it"; } }
 }
 async function choose(v, o) {
   try {
     const { status, body } = await api("/instructions/" + v.instruction_id + "/resolve", "POST", { ask_decision_id: v.decision_id, option_id: o.id });
-    if (status !== 200) return showError(body);
-    render(body);
-  } catch (e) { if (!e.gone) showNetwork(e); }
+    if (status !== 200) return show(slipEl("refuse", "Error", "", body.message || body.error || "Something went wrong."));
+    const led = await getLedger();
+    render(body, led.people);
+  } catch (e) { if (!e.gone) show(slipEl("wait", "Offline", "", "I couldn't reach the server. Nothing was paid. Check your connection and try again.")); }
 }
 async function retry(id) {
-  try { const { status, body } = await api("/instructions/" + id + "/retry", "POST"); status === 200 ? render(body) : showError(body); }
-  catch (e) { if (!e.gone) showNetwork(e); }
+  try { const { status, body } = await api("/instructions/" + id + "/retry", "POST"); if (status === 200) { const led = await getLedger(); render(body, led.people); } else show(slipEl("refuse", "Error", "", body.message || "Something went wrong.")); }
+  catch (e) { if (!e.gone) show(slipEl("wait", "Offline", "", "I couldn't reach the server. Nothing was paid. Check your connection and try again.")); }
 }
 async function confirmDraft() {
   const btn = $("#confirm"); btn.disabled = true;
+  const conn = $("#conn"); if (conn) conn.hidden = true;
   try {
-    // The same commitKey is reused on every retry of THIS draft, so repeating is always safe.
+    // The same commit key is reused on every retry of THIS draft, so repeating is always safe.
     const { status, body } = await api("/actions/" + draft.action_id + "/commit", "POST", { commit_key: draft.commitKey, confirmed_payload_hash: draft.payload_hash });
-    if (status === 200) {
-      $("#decision").replaceChildren(h("div", { class: "slip done" }, h("span", { class: "tag" }, "Recorded (simulated)"),
-        h("h2", {}, body.amount_display + " to " + body.recipient), h("p", {}, "Recorded as " + body.ledger_entry_id + (body.override_over_kobo ? ", including a " + naira(body.override_over_kobo) + " overpayment you approved." : ".") + " No real money moved.")));
-      draft = null; await refreshLedger(); return;
-    }
-    const msgs = { invalidated: "The ledger changed after this draft was prepared, so nothing was paid. Ask again to get a fresh draft.", expired: "This draft expired, so nothing was paid. Ask again.", cancelled: "This draft was cancelled.", already_committed: "This was already recorded." };
-    $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("span", { class: "tag" }, "Not paid"), h("h2", {}, "Nothing was paid"), h("p", {}, msgs[body.error] || body.message || "The payment was not recorded.")));
-    draft = null; await refreshLedger();
+    if (status === 200) { show(doneSlip(body)); draft = null; await getLedger(); return; }
+    const msgs = { invalidated: "The ledger changed after this draft was prepared, so nothing was paid. Ask again to get a fresh draft.", expired: "This draft expired, so nothing was paid. Ask again.", cancelled: "This draft was refused.", already_committed: "This was already recorded." };
+    show(slipEl("refuse", "Not paid", "Nothing was paid", msgs[body.error] || body.message || "The payment was not recorded."));
+    draft = null;
   } catch (e) {
     if (e.gone) return;
     btn.disabled = false;
-    $("#ttl").textContent = "Connection lost. I can't tell whether this was recorded. Press Confirm again: it is safe to repeat, and it can only ever be recorded once.";
+    const t = $("#conn"); if (t) { t.textContent = "Connection lost. I can't tell whether this was recorded. Press Confirm again: it is safe to repeat, and it can only ever be recorded once."; t.hidden = false; }
   }
 }
-async function cancelDraft() {
+async function refuseDraft() {
   const id = draft.action_id;
-  try { const { status, body } = await api("/actions/" + id + "/cancel", "POST"); status === 200 ? ($("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Cancelled"), h("p", {}, "Draft cancelled. Nothing was paid."))), draft = null) : showError(body); }
-  catch (e) { if (!e.gone) showNetwork(e); }
+  try { const { status, body } = await api("/actions/" + id + "/cancel", "POST"); if (status === 200) { draft = null; show(slipEl("wait", "Refused", "", "Draft refused. Nothing was paid.")); } else show(slipEl("refuse", "Error", "", body.message || body.error || "Something went wrong.")); }
+  catch (e) { if (!e.gone) show(slipEl("wait", "Offline", "", "I couldn't reach the server. Nothing was paid. Check your connection and try again.")); }
 }
-function showError(b) { $("#decision").replaceChildren(h("div", { class: "slip refuse" }, h("span", { class: "tag" }, "Error"), h("p", {}, b.message || b.error || "Something went wrong."))); }
-function showTimeout() { $("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Too slow"), h("p", {}, "That took too long, so I stopped waiting. Nothing was paid. Try again."))); }
-function showNetwork() { $("#decision").replaceChildren(h("div", { class: "slip wait" }, h("span", { class: "tag" }, "Offline"), h("p", {}, "I couldn't reach the server. Nothing was paid. Check your connection and try again."))); }
 
-$("#form").addEventListener("submit", (e) => { e.preventDefault(); const t = $("#text").value.trim(); if (t) submit(t); });
+/* ---------------------------------------------------------------- Evidence */
+const OUTCOME_TEXT = { STAGE: "STAGE: a draft is ready, nothing is paid", ASK: "ASK: one answer is needed", REFUSE: "REFUSE: a hard rule applies", WAIT: "WAIT: the request cannot be decided yet" };
+function mentionRows(intent, parse) {
+  if (!intent) return [["Read by", (parse.model_id || "unknown") + " (" + (parse.status || "unknown") + ")"], ["Result", "No valid reading was produced" + (parse.error ? ": " + parse.error : "")]];
+  return [["Read by", (parse.model_id || "unknown") + ", " + (parse.calls || 1) + " call" + ((parse.calls || 1) === 1 ? "" : "s")],
+    ["Verb", intent.verb], ["Who", intent.recipient_mention], ["Amount mode", intent.amount_mode],
+    intent.amount_phrase ? ["Amount phrase", intent.amount_phrase] : null, intent.purpose_phrase ? ["Purpose phrase", intent.purpose_phrase] : null,
+    ...(intent.descriptors || []).map((x) => ["Descriptor (" + x.type + ")", x.text])];
+}
+async function renderEvidence(view, arg, live) {
+  view.append(...pageHead("Evidence", "Why the system reached this decision: the state and records it actually used."));
+  const act = await getActivity();
+  if (!live()) return;
+  if (!act.instructions.length) { view.append(h("p", { class: "empty" }, "No request yet. Start on ", link("prepare", null, "Prepare"), ".")); return; }
+  const want = arg || currentIid();
+  const i = act.instructions.find((x) => x.instruction_id === want) || act.instructions[0];
+  const pick = h("select", { id: "ev-pick", "aria-label": "Request to inspect" }, act.instructions.map((x) => h("option", Object.assign({ value: x.instruction_id }, x.instruction_id === i.instruction_id ? { selected: "selected" } : {}), wat(x.created_at) + ": " + x.raw_text)));
+  pick.addEventListener("change", () => { location.hash = "#/evidence/" + pick.value; });
+  view.append(h("div", { class: "row" }, pick));
+  const v = i.latest, d = v.draft;
+  view.append(h("h3", {}, "Request"), h("p", { class: "quote" }, i.raw_text));
+  view.append(h("h3", {}, "What was read from the sentence"), kv(mentionRows(i.intent, i.parse)),
+    h("p", { class: "note" }, "The language model only reads the sentence into these mentions. Names, amounts and permissions below come from code and the ledger."));
+  // the evidence table: only values the system actually holds for this decision
+  const rows = [];
+  if (i.recipient) { rows.push(["Payee", i.recipient.name]); rows.push(["Payee status", i.recipient.payee_status === "approved" ? "Approved" : "Not approved"]); }
+  if (d) {
+    const c = d.computation;
+    rows.push(["Item", d.agreement_description || d.purpose_text || "Not linked to an agreement"]);
+    if (d.source === "outstanding_balance" && c.agreed_total_kobo != null) {
+      rows.push(["Original amount", naira(c.agreed_total_kobo)], ["Already paid", naira(paidOf(c))], ["Outstanding", naira(c.outstanding_kobo)]);
+    } else if (d.source === "recurring_pattern") {
+      for (const w of c.window) rows.push(["Earlier payment (" + w.entry_id + ")", naira(w.effective_kobo)]);
+      rows.push(["Pattern amount", naira(c.pattern_kobo)]);
+    } else {
+      rows.push(["Amount you stated", naira(d.stated_amount_kobo != null ? d.stated_amount_kobo : d.amount_kobo)]);
+      if (c.outstanding_kobo_if_linked != null) rows.push(["Outstanding on " + d.agreement_description, naira(c.outstanding_kobo_if_linked)]);
+    }
+    rows.push(["Proposed payment", naira(d.amount_kobo), true]);
+  }
+  view.append(h("h3", {}, "Evidence"));
+  if (rows.length) view.append(kv(rows));
+  if (!d) view.append(h("p", { class: "note" }, "No payment was prepared, so there are no amounts to show for this request."));
+  if (v.options && v.options.length) view.append(h("p", { class: "note" }, "Options offered:"), h("ul", {}, v.options.map((o) => h("li", {}, o.label))));
+  if (d) {
+    const recs = d.evidence.filter((e) => e.table !== "instruction");
+    if (recs.length) view.append(h("p", { class: "note" }, "Records used:"), h("ul", {}, recs.map((e) => h("li", {}, e.id + " (" + e.role + "): " + e.summary))));
+    if (d.excluded.length) view.append(h("p", { class: "note" }, "Not counted:"), h("ul", {}, d.excluded.map((e) => h("li", {}, e.entry_id + ": " + naira(e.amount_kobo) + " on " + wat(e.occurred_at).split(",")[0] + ". " + e.reason + (e.possibly_applicable ? ". It may be related." : "")))));
+    if (d.not_linked_balances.length) view.append(h("ul", {}, d.not_linked_balances.map((b) => h("li", {}, b.description + " still shows " + naira(b.outstanding_kobo) + " outstanding. This payment is not linked to it."))));
+    if (!recs.length && !d.excluded.length) view.append(h("p", { class: "note" }, "This amount rests only on what you typed. No ledger record backs it, and no agreement was involved."));
+  }
+  const dec = i.decisions[i.decisions.length - 1];
+  view.append(h("h3", {}, "Decision"));
+  if (i.status === "cancelled") view.append(h("p", { class: "decisionline" }, "Cancelled by you"), h("p", { class: "note" }, "The question was cancelled. Nothing was prepared or paid."));
+  else if (dec) {
+    view.append(h("p", { class: "decisionline" }, OUTCOME_TEXT[dec.outcome] || dec.outcome));
+    if (d) view.append(h("p", {}, "Proposed payment: " + d.amount_display + " to " + d.recipient_name + ". Draft state: " + d.state + "."));
+    view.append(h("h3", {}, "Reason"), h("p", {}, dec.message), h("p", { class: "note" }, "Reason code: " + (dec.reason || "none") + ". Rule version: " + dec.rule_version + ". Decision " + dec.seq + " of " + i.decisions.length + "."));
+  }
+  view.append(h("p", { class: "note" }, link("activity", null, "See what happened (Activity)"), i.pending_status ? " · " : null, i.pending_status ? link("pending", null, "See Pending") : null));
+}
+
+/* ---------------------------------------------------------------- Ledger */
+async function renderLedger(view, arg, live) {
+  view.append(...pageHead("Ledger", "The current financial state: who can be paid, what is owed, and what has been recorded."));
+  const body = await getLedger();
+  if (!live()) return;
+  view.append(h("p", { class: "clock", id: "clock" }, "Demo clock: " + wat(body.now) + " (Lagos time). It starts at the same moment every session."));
+  view.append(h("h3", {}, "Payees"), h("div", { id: "people" }, body.people.map((p) => h("div", { class: "person" },
+    h("div", { class: "n" }, p.name, " ", h("span", { class: "st" }, "(" + p.role + ")")),
+    h("div", { class: "st" + (p.payee_status === "approved" ? "" : " no") }, p.payee_status === "approved" ? "Approved payee" : "Not an approved payee: payments are refused"),
+    p.agreements.length ? h("ul", {}, p.agreements.map((a) => h("li", {}, a.description + ": " + naira(a.outstanding_kobo) + " outstanding of " + naira(a.total_kobo)))) : null))));
+  view.append(h("h3", {}, "Recent entries"), h("table", { class: "entries", id: "entries" },
+    h("thead", {}, h("tr", {}, h("th", {}, "Date"), h("th", {}, "Who"), h("th", {}, "Type"), h("th", { class: "amt" }, "Amount"))),
+    h("tbody", {}, body.entries.slice(0, 30).map((e) => h("tr", {}, h("td", {}, wat(e.occurred_at).split(",")[0]), h("td", {}, e.person),
+      h("td", {}, e.type.replace("_", " ") + (e.reconciliation !== "reconciled" ? " (" + e.reconciliation + ")" : "")), h("td", { class: "amt" }, naira(e.amount_kobo)))))));
+}
+
+/* ---------------------------------------------------------------- Activity */
+function timelineFor(i) {
+  const items = [];
+  const add = (at, kind, what, detail) => items.push({ at, kind, what, detail });
+  add(i.created_at, "", "Request received", "“" + i.raw_text + "”");
+  const p = i.parse || {};
+  if (i.intent) add(null, "", "Request read", (p.model_id || "parser") + ": " + i.intent.verb + " " + i.intent.recipient_mention + ", amount mode " + i.intent.amount_mode + (i.intent.amount_phrase ? " (" + i.intent.amount_phrase + ")" : ""));
+  else add(null, "wait", "Request could not be read", (p.model_id || "parser") + ": " + (p.status || "unknown") + (p.error ? ", " + p.error : ""));
+  for (const d of i.decisions) {
+    add(d.at, d.outcome.toLowerCase(), "Decision " + d.seq + ": " + d.outcome, d.message + (d.reason ? " (" + d.reason + ")" : "") + (d.options.length ? " Options: " + d.options.map((o) => o.label).join("; ") + "." : ""));
+    for (const a of i.actions.filter((x) => x.decision_id === d.id)) for (const e of a.events) {
+      const t = { STAGED: ["stage", "Draft staged", "Nothing paid yet."], COMMITTED: ["stage", "Confirmed by you", "Simulated payment recorded as " + a.ledger_entry_id + ". No real money moved."],
+        CANCELLED: ["wait", "Draft refused by you", "Nothing was paid."], EXPIRED: ["wait", "Draft expired", "Nothing was paid."], INVALIDATED: ["refuse", "Draft invalidated", "Nothing was paid" + (e.reason ? " (" + e.reason + ")" : "") + "."] }[e.to_state];
+      add(e.at, t[0], t[1], t[2]);
+    }
+  }
+  for (const a of i.actions) if (a.lapsed) add(a.expires_at, "wait", "Draft time limit passed", "Not confirmed in time. Nothing was paid.");
+  if (i.status === "cancelled") add(null, "wait", "Question cancelled by you", "Time not recorded. Nothing was prepared or paid.");
+  return items;   // built in order: request, reading, then each decision followed by its own draft events
+}
+async function renderActivity(view, arg, live) {
+  view.append(...pageHead("Activity", "What the system did with each request, in order. This is not the ledger."));
+  const act = await getActivity();
+  if (!live()) return;
+  if (!act.instructions.length) { view.append(h("p", { class: "empty" }, "Nothing has happened yet. Start on ", link("prepare", null, "Prepare"), ".")); return; }
+  for (const i of act.instructions) {
+    const items = timelineFor(i);
+    view.append(h("section", { class: "run" }, h("p", { class: "req" }, i.raw_text),
+      h("ol", { class: "timeline" }, items.map((x) => h("li", { class: x.kind }, x.at ? h("div", { class: "t" }, watSec(x.at)) : null, h("div", { class: "what" }, x.what), h("p", { class: "detail" }, x.detail))) ),
+      h("p", { class: "note" }, link("evidence", i.instruction_id, "Evidence"), i.pending_status ? " · " : null, i.pending_status ? link("pending", null, "Pending") : null)));
+  }
+}
+
+/* ---------------------------------------------------------------- Pending */
+const PEND = {
+  awaiting_confirmation: ["stage", "STAGED", "Awaiting your confirmation"], needs_answer: ["ask", "ASK", "Needs your answer"], waiting: ["wait", "WAIT", "Waiting"],
+  refused: ["refuse", "REFUSED", "Refused"], expired: ["wait", "EXPIRED", "Draft expired"], invalidated: ["refuse", "INVALIDATED", "Draft invalidated"],
+};
+async function renderPending(view, arg, live) {
+  view.append(...pageHead("Pending", "Requests that cannot be completed as they stand: blocked, waiting for an answer, staged, or lapsed."));
+  const act = await getActivity();
+  if (!live()) return;
+  const list = act.instructions.filter((i) => i.pending_status);
+  if (!list.length) { view.append(h("p", { class: "empty", id: "pending-empty" }, "Nothing is pending. Everything you asked has been recorded, refused by you, or answered.")); return; }
+  for (const i of list) {
+    const [kind, tag, label] = PEND[i.pending_status], v = i.latest, d = v.draft;
+    const el = h("section", { class: "pend", "data-status": i.pending_status }, h("span", { class: "tag " + kind }, tag));
+    const typedAmt = i.intent && i.intent.amount_phrase ? " (" + i.intent.amount_phrase + " as typed)" : "";   // the user's own words, not a parsed figure
+    el.append(h("h3", {}, d ? d.amount_display + " to " + d.recipient_name : (i.recipient ? "Pay " + i.recipient.name + typedAmt : "Request")));
+    el.append(h("p", { class: "note" }, "You said: “" + i.raw_text + "”"));
+    el.append(h("p", {}, h("span", { class: "label" }, "Status: "), label));
+    el.append(h("p", {}, h("span", { class: "label" }, "Reason: "), v.message));
+    if (i.pending_status === "refused" && v.reason === "recipient_not_approved" && i.recipient)
+      el.append(h("p", {}, h("span", { class: "label" }, "Required condition: "), i.recipient.name + " must become an approved payee before this payment can be prepared. This app has no control for approving payees."));
+    if (i.pending_status === "awaiting_confirmation") el.append(h("p", { class: "note" }, "Draft expires at " + wat(d.expires_at) + " (demo clock)."));
+    if (i.pending_status === "invalidated") el.append(h("p", { class: "note" }, "Reason recorded: " + ((i.actions.find((a) => a.id === d.action_id) || {}).state_reason || "not recorded") + "."));
+    const open = ["awaiting_confirmation", "needs_answer", "waiting"].includes(i.pending_status);
+    el.append(h("div", { class: "row" }, open ? link("prepare", i.instruction_id, i.pending_status === "awaiting_confirmation" ? "Review and decide" : i.pending_status === "needs_answer" ? "Answer in Prepare" : "Open in Prepare", "btn") : null, link("evidence", i.instruction_id, "Inspect evidence", "btn")));
+    view.append(el);
+  }
+}
+
+const RENDER = { prepare: renderPrepare, evidence: renderEvidence, ledger: renderLedger, activity: renderActivity, pending: renderPending };
+
 $("#banner-ok").addEventListener("click", () => { $("#banner").style.display = "none"; });
-$("#chips").replaceChildren(...EXAMPLES.map((t) => h("button", { type: "button", class: "chip", onclick: () => { $("#text").value = t; $("#text").focus(); } }, t)));
 (async () => {
   try {
-    try { const i = await (await fetch("/api/info")).json(); liveModel = !!i.live_model; parserLabel = "Reading instructions with: " + i.parser + "."; $("#parser").textContent = parserLabel; } catch {}
+    try { const i = await (await fetch("/api/info")).json(); liveModel = !!i.live_model; parserLabel = "Reading instructions with: " + i.parser + "."; } catch { /* label stays empty */ }
     if (!sid) await newSession(false);
     else { const r = await fetch("/api/sessions/" + sid + "/ledger"); if (r.status === 410) await newSession(true); }
-    await refreshLedger();
-    await refreshBudget();
+    await route();
   } catch (e) { if (!e.gone) console.error(e); }
 })();
 </script>

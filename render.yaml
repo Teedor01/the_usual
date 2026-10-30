@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: the-usual
+    runtime: python
+    plan: starter            
+    numInstances: 1        
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn app.api:create_app --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /   
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3       
+      - key: USUAL_DATA_DIR
+        value: /tmp/usual
+      - key: USUAL_NO_DOTENV
+        value: "1"         
+      - key: USUAL_REQUIRE_LIVE_MODEL
+        value: "1"          
+      - key: NEBIUS_API_KEY
+        sync: false         
+      - key: NEBIUS_BASE_URL
+        value: https://api.tokenfactory.nebius.com/v1/
+      - key: NEBIUS_MODEL
+        value: nvidia/Nemotron-3_5-Lightning
+      - key: NEBIUS_STRUCTURED_OUTPUT
+        value: "0"
+      - key: NEBIUS_MAX_TOKENS
+        value: "4096"
+      - key: NEBIUS_TIMEOUT
+        value: "120"
+      - key: USUAL_MAX_CALLS_PER_SESSION
+        value: "30"
+      - key: USUAL_MAX_CALLS_PER_DAY
+        value: "400"

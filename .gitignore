@@ -1,0 +1,9 @@
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+smoke_results.json
+__pycache__/
+.pytest_cache/
+polygraph/runs.log

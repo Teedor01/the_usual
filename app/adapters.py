@@ -135,6 +135,42 @@ SYSTEM_PROMPT = (
 )
 
 
+REQUIRED_LIVE_ENV = ("NEBIUS_API_KEY", "NEBIUS_BASE_URL", "NEBIUS_MODEL")
+
+
+class MissingCredentials(RuntimeError):
+    """Strict mode (USUAL_REQUIRE_LIVE_MODEL=1) is on but the Nebius credentials are absent or still placeholders."""
+
+
+def live_model_required() -> bool:
+    """Opt-in strict mode for hosted deployments. Off by default so local runs and the test suite keep the
+    documented keyless rule-parser behaviour."""
+    return os.environ.get("USUAL_REQUIRE_LIVE_MODEL", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def problems_with_live_env() -> list:
+    """Names (never values) of required Nebius variables that are unset, empty or still 'paste-...' placeholders."""
+    bad = []
+    for k in REQUIRED_LIVE_ENV:
+        v = (os.environ.get(k) or "").strip()
+        if not v or v.lower().startswith(("paste-", "paste_", "paste ")):
+            bad.append(k)
+    return bad
+
+
+def require_live_model_or_raise() -> None:
+    """No-op unless strict mode is on. In strict mode a missing/placeholder credential is a startup error,
+    never a silent switch to the rule parser."""
+    if not live_model_required():
+        return
+    bad = problems_with_live_env()
+    if bad:
+        raise MissingCredentials(
+            "USUAL_REQUIRE_LIVE_MODEL is set, but these model settings are missing or still placeholders: "
+            + ", ".join(bad) + ". Set them in the hosting dashboard's environment settings. "
+            "Refusing to start instead of silently falling back to the rule parser.")
+
+
 class OutputTruncated(Exception):
     """The model hit max_tokens before finishing (finish_reason == 'length'). For a reasoning model this
     means the answer was never written; any text in `content` is unfinished thinking and must not be parsed."""
